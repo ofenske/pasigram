@@ -2,15 +2,63 @@ import pandas as pd
 
 
 class graph:
-    def __init__(self, nodes, edges):
+    """A class to represent a directed graph with labels for the edges and nodes.
+
+    ...
+
+    Attributes
+    ----------
+        nodes : pd.DataFrame
+            The nodes of the graph (id, label)
+        node_ids : List
+            contains all node ids
+        edges : pd.DataFrame
+            The edges of the graph (id, source, target)
+        matrix : pd.DataFrame
+            adjacency matrix of the graph (ids of nodes and edges)
+
+
+    Methods
+    -------
+        build_graph(self)
+            Method for building the adjacency  matrix of the graph
+        build_adjacency_list(self)
+            Method for building the adjacency list of the nodes
+        build_node_ids(self)
+            Method for building a list of node ids
+        calculate_node_degrees(self)
+            Method for calculating the outgoing degrees of all nodes
+
+    """
+
+    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame) -> object:
+        """
+
+        Parameters
+        ----------
+        nodes : DataFrame
+            Contains all nodes of the graph.
+        edges : DataFrame
+            Contains all edges of the graph.
+
+        Returns
+        -------
+        object
+        """
         self.__nodes = nodes
         self.__node_ids = self.__build_node_ids()
         self.__edges = edges
         self.__matrix = self.__build_graph()
-        #self.__node_degrees = self.__calculate_node_degrees()
-        #self.__adjacency_list = self.__build_adjacency_list()
+        # self.__node_degrees = self.__calculate_node_degrees()
+        # self.__adjacency_list = self.__build_adjacency_list()
 
-    def __build_graph(self):
+    def __build_graph(self) -> pd.DataFrame:
+        """Builds the adjacency matrix.
+
+        Returns
+        -------
+        DataFrame
+        """
         graph = pd.DataFrame(index=self.__node_ids, columns=self.__node_ids)
         for i in range(0, len(self.__edges)):
             source_node = self.__edges.iloc[i][1]
@@ -31,7 +79,13 @@ class graph:
 
         return adjacency_list
 
-    def __build_node_ids(self):
+    def __build_node_ids(self) -> list:
+        """
+
+        Returns
+        -------
+        list
+        """
         node_ids = []
         for i in range(0, len(self.__nodes)):
             node_ids.append(self.__nodes.iloc[i]['id'])
@@ -39,7 +93,7 @@ class graph:
 
     def __calculate_node_degrees(self):
         node_degrees = pd.DataFrame(index=self.__node_ids, columns=['degree'])
-        for i in range (0,len(self.__nodes)):
+        for i in range(0, len(self.__nodes)):
             current_node_id = self.__nodes.iloc[i]['id']
             current_node_degree = 0
             for j in range(0, len(self.__matrix.iloc[current_node_id])):
@@ -61,12 +115,3 @@ class graph:
 
     def get_node_ids(self):
         return self.__node_ids, type(self.__node_ids)
-
-
-# -----------------------------------------------------------------Tests-------------------------------------------------
-
-edges = pd.read_csv('edges.csv', sep=';')
-nodes = pd.read_csv('nodes.csv', sep=';')
-
-graph = graph(nodes, edges)
-print(graph.get_matrix())
