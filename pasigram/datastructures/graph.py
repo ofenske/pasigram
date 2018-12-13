@@ -67,6 +67,7 @@ class graph:
         return graph
 
     def __build_adjacency_list(self):
+        #todo: write method to generate adjacency list for nodes
         adjacency_list = pd.DataFrame(index=self.__node_ids, columns=['neighbours'])
 
         for i in range(0, len(self.__nodes)):
@@ -92,6 +93,7 @@ class graph:
         return node_ids
 
     def __calculate_node_degrees(self):
+        #todo: test method
         node_degrees = pd.DataFrame(index=self.__node_ids, columns=['degree'])
         for i in range(0, len(self.__nodes)):
             current_node_id = self.__nodes.iloc[i]['id']
