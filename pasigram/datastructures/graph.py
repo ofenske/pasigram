@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class graph:
+class Graph:
     """A class to represent a directed graph with labels for the edges and nodes.
 
     ...
@@ -49,8 +49,8 @@ class graph:
         self.__node_ids = self.__build_node_ids()
         self.__edges = edges
         self.__matrix = self.__build_graph()
-        # self.__node_degrees = self.__calculate_node_degrees()
-        # self.__adjacency_list = self.__build_adjacency_list()
+        self.__node_degrees = self.__calculate_node_degrees()
+        self.__adjacency_list = self.__build_adjacency_list()
 
     def __build_graph(self) -> pd.DataFrame:
         """Builds the adjacency matrix.
@@ -66,18 +66,27 @@ class graph:
             graph[target_node][source_node] = self.__edges.iloc[i][0]
         return graph
 
-    def __build_adjacency_list(self):
-        #todo: write method to generate adjacency list for nodes
-        adjacency_list = pd.DataFrame(index=self.__node_ids, columns=['neighbours'])
+    def __build_adjacency_list(self) -> pd.DataFrame:
+        """Method which build the adjacency lists of all nodes.
+        Notation: index: nodeId, neighbours: [[edgelabel, neighbourVertexLabel, neighbourVertexDegree], ...]
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        adjacency_list = pd.DataFrame(index=self.__node_ids, columns=["neighbours"])
 
         for i in range(0, len(self.__nodes)):
             current_node_id = self.__nodes.iloc[i]['id']
-            adjacency_list['neighbours'][current_node_id] = pd.DataFrame(
-                columns=['edge_label', 'neighbour_vertex_degree', 'neighbour_vertex_label'])
+            adjacency_list['neighbours'][current_node_id] = []
             for j in range(0, len(self.__edges)):
-                if self.__edges.iloc[j]["source"] == adjacency_list.iloc[i]["id"]:
-                    adjacency_list['neighbours'][i].append()
-
+                if self.__edges.iloc[j]["source"] == current_node_id:
+                    edge_label = self.__edges.iloc[j]["label"]
+                    neighbour_vertex_id = self.__edges.iloc[j]["target"]
+                    neighbour_vertex_label = self.__nodes[self.__nodes["id"] == neighbour_vertex_id]["label"]
+                    neighbour_vertex_degree = self.__node_degrees.loc[neighbour_vertex_id]["degree"]
+                    adjacency_list['neighbours'][current_node_id].append(
+                        [edge_label, neighbour_vertex_label, neighbour_vertex_degree])
         return adjacency_list
 
     def __build_node_ids(self) -> list:
@@ -92,28 +101,45 @@ class graph:
             node_ids.append(self.__nodes.iloc[i]['id'])
         return node_ids
 
-    def __calculate_node_degrees(self):
-        #todo: test method
+    def __calculate_node_degrees(self) -> pd.DataFrame:
+        """
+
+        Returns
+        -------
+        pd.DataFrame
+
+        """
         node_degrees = pd.DataFrame(index=self.__node_ids, columns=['degree'])
-        for i in range(0, len(self.__nodes)):
+        for i in range(0, len(self.__node_ids)):
             current_node_id = self.__nodes.iloc[i]['id']
             current_node_degree = 0
-            for j in range(0, len(self.__matrix.iloc[current_node_id])):
-                if self.__matrix.iloc[current_node_id][j] != 'NaN':
+            current_node = self.__matrix.loc[current_node_id]
+            for element in current_node:
+                if pd.isnull(element) == False:
                     current_node_degree += 1
             node_degrees['degree'][current_node_id] = current_node_degree
+        return node_degrees
 
-    def get_matrix(self):
+    @property
+    def get_matrix(self) -> pd.DataFrame:
         return self.__matrix
 
-    def get_nodes(self):
+    @property
+    def get_nodes(self) -> pd.DataFrame:
         return self.__nodes
 
-    def get_edges(self):
+    @property
+    def get_edges(self) -> pd.DataFrame:
         return self.__edges
 
-    def get_adjacency_list(self):
+    @property
+    def get_adjacency_list(self) -> pd.DataFrame:
         return self.__adjacency_list
 
-    def get_node_ids(self):
+    @property
+    def get_node_ids(self) -> list:
         return self.__node_ids, type(self.__node_ids)
+
+    @property
+    def get_node_degrees(self) -> pd.DataFrame:
+        return self.__node_degrees
