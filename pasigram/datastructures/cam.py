@@ -1,0 +1,138 @@
+import pandas as pd
+
+
+def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.DataFrame) -> pd.DataFrame:
+    """Method for cluster nodes by their labels and degrees.
+
+    Parameters
+    ----------
+    nodes : DataFrame
+        The DataFrame which contains the nodes of the graph.
+
+    node_degrees : DataFrame
+        The DataFrame which contains the degree for the single nodes of the graph.
+
+    Returns
+    -------
+    DataFrame in following format:
+    cluster_id | label | degree | elements
+    """
+    clusters = pd.DataFrame(columns=['label', 'degree', 'elements'])
+
+    # iterate over all nodes to cluster them by degree and label
+    for i in range(0, len(nodes)):
+        # clustername of nodes = label of nodes+degree of nodes
+        # can be used to search if there is already a cluster to which a nde can be assigned
+        current_name = nodes.iloc[i]['label'] + str(node_degrees.iloc[i]['degree'])
+
+        # label, id, degree of the current node
+        current_node_label = nodes.iloc[i]['label']
+        current_node_id = nodes.iloc[i]['id']
+        current_node_degree = node_degrees.iloc[i]['degree']
+
+        # check if the clustername for the current node already exists (yes = assign node to cluster, no = define new cluster)
+        if len(clusters[(clusters['label'] == current_node_label) & (clusters['degree'] == current_node_degree)]) == 0:
+            clusters.loc[current_name] = [current_node_label, current_node_degree, [current_node_id]]
+        else:
+            clusters.loc[current_name]['elements'].append(current_node_id)
+
+    return clusters
+
+
+def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: pd.DataFrame) -> pd.DataFrame:
+    """Methode for cluster nodes based on their labels, degrees and adjacency list
+
+    Parameters
+    ----------
+    pre_clusters : DataFrame
+        The DataFrame with the clusters predefined by cluster_nodes_by_label_and_degree()
+
+    adjacency_list : DataFrame
+        The DataFrame which contains the adjacency list for every node.
+
+    Returns
+    -------
+    DataFrame in following format:
+    cluster_id | label | degree | neighbours | elements
+    """
+    final_clusters = pd.DataFrame(columns=['label', 'degree', 'neighbours', 'elements'])
+
+    # iterate over all nodes of all clusters of the predefined clusters
+    for i in range(0, len(pre_clusters)):
+        # get all nodes of the cluster
+        cluster_elements = pre_clusters.iloc[i]['elements']
+
+        # get label, degree of the current cluster
+        node_label = pre_clusters.iloc[i]['label']
+        node_degree = pre_clusters.iloc[i]['degree']
+
+        # iterate over all nodes of the current cluster
+        for j in range(0, len(cluster_elements)):
+            # get the current node of the current cluster (the id)
+            element = cluster_elements[j]
+
+            # get neighbours of the current node (call by node id)
+            node_neighbours = adjacency_list.loc[element]['neighbours']
+
+            # initialize cluster name (= label of node + degree of nodes + labels of edges + labels of neighbours
+            cluster_name = pre_clusters.iloc[i]['label'] + str(pre_clusters.iloc[i]['degree'])
+
+            # Initialize lists for edge labels and neighbour labels for the current node
+            edge_labels = []
+            neighbour_labels = []
+
+            # Iterate over all elements in adjacency list of current node
+            for k in range(0, len(node_neighbours)):
+                # append label of edge and label of neighbour node to existing lists
+                edge_labels.append(node_neighbours[k][0])
+                neighbour_labels.append(node_neighbours[k][1])
+
+            # sort edge and neighbour labels
+            sorted_edge_labels = sorted(edge_labels)
+            sorted_neighbour_labels = sorted(neighbour_labels)
+
+            # Iterate over all elements of the neighbour list to build incrementally the final cluster name
+            for k in range(0, len(sorted_neighbour_labels)):
+                # build final cluster name element by element
+                cluster_name += sorted_edge_labels[k] + sorted_neighbour_labels[k]
+
+            # check if cluster name not already exists
+            if cluster_name not in final_clusters.index:
+                # define new cluster
+                final_clusters.loc[cluster_name] = [node_label, node_degree, node_neighbours, [element]]
+
+            # cluster name already exists
+            else:
+                # assign node to existing cluster
+                final_clusters.loc[cluster_name]['elements'].append(element)
+
+    return final_clusters
+
+
+def build_canonical_smallest_code(final_clusters: pd.DataFrame) -> str:
+    """Method for building the canonical code of a graph.
+
+    Parameters
+    ----------
+    final_clusters : pd.DataFrame
+        The DataFrame which contains the final clusters of the nodes.
+
+    Returns
+    -------
+    String
+    """
+    # get all keys from final clusters
+    keyset = final_clusters.index
+
+    # sort the keyset
+    sorted_keyset = sorted(keyset)
+
+    # Initialize the final label for the graph
+    label = ""
+
+    # Iterate over all elements in sorted_keyset
+    for i in range(0, len(sorted_keyset)):
+        # build label element by element
+        label += sorted_keyset[i]
+
+    return label

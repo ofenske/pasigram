@@ -15,11 +15,11 @@ class TestGraph(TestCase):
                                         "label": ["a", "b"]})
         graph = Graph(nodes, edges)
         result = graph.get_matrix.to_string()
-        self.assertEquals(expected, result, msg="Test1")
+        self.assertEqual(expected, result, msg="Test1")
 
     def test_get_adjacency_list(self):
-        expected = pd.DataFrame.from_dict({"1": [[["a", ["node2"], 1]]],
-                                           "2": [[["b", ["node1"], 1]]]}, columns=["neighbours"],
+        expected = pd.DataFrame.from_dict({"1": [[["a", "node2", 1]]],
+                                           "2": [[["b", "node1", 1]]]}, columns=["neighbours"],
                                           orient="index").to_string()
         nodes = pd.DataFrame.from_dict({"id": ["1", "2"],
                                         "label": ["node1", "node2"]})
