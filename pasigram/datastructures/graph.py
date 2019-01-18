@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from pasigram.datastructures.cam import cluster_nodes_by_adjacency_list, cluster_nodes_by_label_and_degree, \
     build_canonical_smallest_code
 
@@ -113,22 +114,22 @@ class Graph:
             adjacency_list.loc[current_node_id]['neighbours'] = []
 
             # Todo: use df[df[source == current_node_id]] instead of for-loop (more efficient?)
-            # iterate over all edges of the graph to get all neighbours of the current node
-            for j in range(0, len(self.__edges)):
-                # if node_id is source of current edge
-                if self.__edges.iloc[j]["source"] == current_node_id:
-                    # get label of the current edge
-                    edge_label = self.__edges.iloc[j]["label"]
+            neighbours = self.__edges[self.__edges['source'] == current_node_id]
 
-                    # get id, label, degree of the neighbour node of the current node for the current edge
-                    neighbour_vertex_id = self.__edges.iloc[j]["target"]
-                    neighbour_vertex_label_list = self.__nodes[self.__nodes["id"] == neighbour_vertex_id]["label"]
-                    neighbour_vertex_label = neighbour_vertex_label_list.iloc[0]
-                    neighbour_vertex_degree = self.__node_degrees.loc[neighbour_vertex_id]["degree"]
+            for j in range(0, len(neighbours)):
+                # get label of the current edge
+                edge_label = neighbours.iloc[j]["label"]
 
-                    # append edge label, neighbour node label, neighbour node degree  to the neighbour list of the current node
-                    adjacency_list['neighbours'][current_node_id].append(
-                        [edge_label, neighbour_vertex_label, neighbour_vertex_degree])
+                # get id, label, degree of the neighbour node of the current node for the current edge
+                neighbour_vertex_id = neighbours.iloc[j]["target"]
+                neighbour_vertex_label_list = self.__nodes[self.__nodes["id"] == neighbour_vertex_id]["label"]
+                neighbour_vertex_label = neighbour_vertex_label_list.iloc[0]
+                neighbour_vertex_indegree = self.__node_degrees.loc[neighbour_vertex_id]["Indegree"]
+                neighbour_vertex_outdegree = self.__node_degrees.loc[neighbour_vertex_id]["Outdegree"]
+
+                # append edge label, neighbour node label, neighbour node degree  to the neighbour list of the current node
+                adjacency_list['neighbours'][current_node_id].append(
+                    [edge_label, neighbour_vertex_label, neighbour_vertex_indegree, neighbour_vertex_outdegree])
 
         # sort neighbour_list for each node
         for i in range(0, len(adjacency_list)):
@@ -157,15 +158,22 @@ class Graph:
         pd.DataFrame
 
         """
-        node_degrees = pd.DataFrame(index=self.__node_ids, columns=['degree'])
+        node_degrees = pd.DataFrame(index=self.__node_ids, columns=['Indegree', 'Outdegree'])
         for i in range(0, len(self.__node_ids)):
             current_node_id = self.__nodes.iloc[i]['id']
-            current_node_degree = 0
-            current_node = self.__matrix.loc[current_node_id]
-            for element in current_node:
-                if pd.isnull(element) == False:
-                    current_node_degree += 1
-            node_degrees['degree'][current_node_id] = current_node_degree
+            current_node_indegree = 0
+            current_node_outdegree = 0
+
+            # calculate outgoing node degree
+            current_node_outdegree += len(self.__edges[self.__edges['source'] == current_node_id])
+
+            # calculate ingoing node degrees
+            current_node_indegree += len(self.__edges[self.__edges['target'] == current_node_id])
+
+            # assign node degree to node
+            node_degrees['Indegree'][current_node_id] = current_node_indegree
+            node_degrees['Outdegree'][current_node_id] = current_node_outdegree
+
         return node_degrees
 
     @property
