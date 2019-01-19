@@ -51,8 +51,7 @@ class Graph:
         # nodes of the graph (pd.DataFrame)
         self.__nodes = nodes
 
-        # ids of all nodes of the graph (list)
-        self.__node_ids = self.__build_node_ids()
+        # edges of the graph (pd.DataFrame)
         self.__edges = edges
 
         # adjacency matrix of the graph (pd.DataFrame)
@@ -80,16 +79,24 @@ class Graph:
         -------
         DataFrame
         """
-        graph = pd.DataFrame(index=self.__node_ids, columns=self.__node_ids)
+        # get the ids of all nodes
+        node_ids = list(self.__nodes.index)
+
+        # initialize the adjacency matrix
+        graph = pd.DataFrame(index=node_ids, columns=node_ids)
+
+        # get the ids of all edges
+        edge_ids = list(self.__edges.index)
 
         # iterate over all edges of the graph to build adjacency matrix
-        for i in range(0, len(self.__edges)):
+        for i in range(0, len(edge_ids)):
             # get source and target node of an edge
-            source_node = self.__edges.iloc[i][1]
-            target_node = self.__edges.iloc[i][2]
+            edge_id = edge_ids[i]
+            source_node = self.__edges.loc[edge_id]['source']
+            target_node = self.__edges.loc[edge_id]['target']
 
             # insert entry to matrix
-            graph.loc[source_node][target_node] = self.__edges.iloc[i]['id']
+            graph.loc[source_node][target_node] = edge_id
 
         return graph
 
@@ -101,29 +108,31 @@ class Graph:
         -------
         pd.DataFrame
         """
+        # get ids of all nodes
+        node_ids = list(self.__nodes.index)
 
         # initialize adjacency list
-        adjacency_list = pd.DataFrame(index=self.__node_ids, columns=["neighbours"])
+        adjacency_list = pd.DataFrame(index=node_ids, columns=["neighbours"])
 
         # iterate over all nodes of the graph to build adjacency list
-        for i in range(0, len(self.__nodes)):
+        for i in range(0, len(node_ids)):
             # get id of the current node
-            current_node_id = self.__nodes.iloc[i]['id']
+            current_node_id = node_ids[i]
 
             # initialize new entry for the current node
             adjacency_list.loc[current_node_id]['neighbours'] = []
 
-            # Todo: use df[df[source == current_node_id]] instead of for-loop (more efficient?)
-            neighbours = self.__edges[self.__edges['source'] == current_node_id]
+            # get all outgoing edges for the current node as pd.DataFrame (id|source|target|label)
+            outgoing_edges = self.__edges[self.__edges['source'] == current_node_id]
 
-            for j in range(0, len(neighbours)):
+            # iterate over all edges of the list 'outgoing_edges' to build the adjacency list for the current node
+            for j in range(0, len(outgoing_edges)):
                 # get label of the current edge
-                edge_label = neighbours.iloc[j]["label"]
+                edge_label = outgoing_edges.iloc[j]["label"]
 
                 # get id, label, degree of the neighbour node of the current node for the current edge
-                neighbour_vertex_id = neighbours.iloc[j]["target"]
-                neighbour_vertex_label_list = self.__nodes[self.__nodes["id"] == neighbour_vertex_id]["label"]
-                neighbour_vertex_label = neighbour_vertex_label_list.iloc[0]
+                neighbour_vertex_id = outgoing_edges.iloc[j]["target"]
+                neighbour_vertex_label = self.__nodes.loc[neighbour_vertex_id]["label"]
                 neighbour_vertex_indegree = self.__node_degrees.loc[neighbour_vertex_id]["Indegree"]
                 neighbour_vertex_outdegree = self.__node_degrees.loc[neighbour_vertex_id]["Outdegree"]
 
@@ -138,18 +147,6 @@ class Graph:
 
         return adjacency_list
 
-    def __build_node_ids(self) -> list:
-        """
-
-        Returns
-        -------
-        list
-        """
-        node_ids = []
-        for i in range(0, len(self.__nodes)):
-            node_ids.append(self.__nodes.iloc[i]['id'])
-        return node_ids
-
     def __calculate_node_degrees(self) -> pd.DataFrame:
         """
 
@@ -158,9 +155,11 @@ class Graph:
         pd.DataFrame
 
         """
-        node_degrees = pd.DataFrame(index=self.__node_ids, columns=['Indegree', 'Outdegree'])
-        for i in range(0, len(self.__node_ids)):
-            current_node_id = self.__nodes.iloc[i]['id']
+
+        node_ids = list(self.__nodes.index)
+        node_degrees = pd.DataFrame(index=node_ids, columns=['Indegree', 'Outdegree'])
+        for i in range(0, len(node_ids)):
+            current_node_id = node_ids[i]
             current_node_indegree = 0
             current_node_outdegree = 0
 
@@ -171,8 +170,8 @@ class Graph:
             current_node_indegree += len(self.__edges[self.__edges['target'] == current_node_id])
 
             # assign node degree to node
-            node_degrees['Indegree'][current_node_id] = current_node_indegree
-            node_degrees['Outdegree'][current_node_id] = current_node_outdegree
+            node_degrees.loc[current_node_id]['Indegree'] = current_node_indegree
+            node_degrees.loc[current_node_id]['Outdegree'] = current_node_outdegree
 
         return node_degrees
 
@@ -191,10 +190,6 @@ class Graph:
     @property
     def get_adjacency_list(self) -> pd.DataFrame:
         return self.__adjacency_list
-
-    @property
-    def get_node_ids(self) -> list:
-        return self.__node_ids, type(self.__node_ids)
 
     @property
     def get_node_degrees(self) -> pd.DataFrame:

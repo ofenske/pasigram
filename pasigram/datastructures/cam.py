@@ -19,11 +19,12 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
     """
     clusters = pd.DataFrame(columns=['label', 'indegree', 'outdegree', 'elements'])
 
+    node_ids = nodes.index
     # iterate over all nodes to cluster them by degree and label
-    for i in range(0, len(nodes)):
+    for i in range(0, len(node_ids)):
         # label, id, degree of the current node
-        current_node_label = nodes.iloc[i]['label']
-        current_node_id = nodes.iloc[i]['id']
+        current_node_id = node_ids[i]
+        current_node_label = nodes.loc[current_node_id]['label']
         current_node_indegree = node_degrees.loc[current_node_id]['Indegree']
         current_node_outdegree = node_degrees.loc[current_node_id]['Outdegree']
 
