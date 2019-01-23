@@ -1,8 +1,7 @@
 import pandas as pd
 
 
-def get_edges_with_node_labels(edges, nodes):
-    edge_ids = list(edges.index)
+def compute_edges_with_node_labels(edge_ids: list, edges: pd.DataFrame, nodes: pd.DataFrame) -> pd.DataFrame:
     edges_with_node_labels = pd.DataFrame(columns=['source', 'target', 'label'], index=edge_ids)
 
     for i in range(0, len(edge_ids)):

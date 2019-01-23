@@ -32,7 +32,8 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
         # can be used to search if there is already a cluster to which a node can be assigned
         cluster_name = current_node_label + str(current_node_indegree) + str(current_node_outdegree)
 
-        # check if the clustername for the current node already exists (yes = assign node to cluster, no = define new cluster)
+        # check if the clustername for the current node already exists
+        # (yes = assign node to cluster, no = define new cluster)
         if cluster_name not in clusters.index:
             clusters.loc[cluster_name] = [current_node_label, current_node_indegree, current_node_outdegree,
                                           [current_node_id]]
@@ -112,39 +113,3 @@ def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: 
                 final_clusters.loc[cluster_name]['elements'].append(element)
 
     return final_clusters
-
-
-def build_canonical_smallest_code(final_clusters: pd.DataFrame) -> str:
-    """Method for building the canonical code of a graph.
-
-    Parameters
-    ----------
-    final_clusters : pd.DataFrame
-        The DataFrame which contains the final clusters of the nodes.
-
-    Returns
-    -------
-    String
-    """
-
-    # get all keys from final clusters
-    keyset = list(final_clusters.index)
-
-    # append number of elements to every clustername (clustername+"#1#)
-    for i in range(0, len(keyset)):
-        number_of_elements = len(final_clusters.loc[keyset[i]]['elements'])
-        keyset[i] = keyset[i] + '#' + str(number_of_elements)+'#'
-
-
-    # sort the keyset
-    sorted_keyset = sorted(keyset)
-
-    # Initialize the final label for the graph
-    label = ""
-
-    # Iterate over all elements in sorted_keyset
-    for i in range(0, len(sorted_keyset)):
-        # build label element by element
-        label += sorted_keyset[i]
-
-    return label

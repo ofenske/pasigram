@@ -1,6 +1,6 @@
 from unittest import TestCase
-import pandas as pd
-from pasigram.datastructures.graph import Graph
+#import pandas as pd
+from pasigram.model.graph import *
 
 
 class TestCam(TestCase):
@@ -12,8 +12,8 @@ class TestCam(TestCase):
 
         graph1 = Graph(nodes1, edges1)
         graph2 = Graph(nodes2, edges2)
-        code1 = graph1.get_canonical_code
-        code2 = graph2.get_canonical_code
+        code1 = graph1.canonical_code
+        code2 = graph2.canonical_code
         self.assertEqual(code1, code2, msg="Test1")
 
     def test_negative_get_canonical_code(self):
@@ -24,8 +24,8 @@ class TestCam(TestCase):
 
         graph1 = Graph(nodes1, edges1)
         graph2 = Graph(nodes2, edges2)
-        code1 = graph1.get_canonical_code
-        code2 = graph2.get_canonical_code
+        code1 = graph1.canonical_code
+        code2 = graph2.canonical_code
         print(code1)
         print(code2)
         self.assertIsNot(code1, code2, msg="Test1")

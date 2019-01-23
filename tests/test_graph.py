@@ -1,6 +1,6 @@
 from unittest import TestCase
 import pandas as pd
-from pasigram.datastructures.graph import Graph
+from pasigram.model.graph import *
 
 
 class TestGraph(TestCase):
@@ -13,7 +13,7 @@ class TestGraph(TestCase):
                                         "2": ["2", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
 
         graph = Graph(nodes, edges)
-        result = graph.get_matrix.to_string()
+        result = graph.adjacency_matrix.to_string()
         self.assertEqual(expected, result, msg="Test1")
 
     def test_get_adjacency_list(self):
@@ -26,7 +26,7 @@ class TestGraph(TestCase):
                                         "2": ["2", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
 
         graph = Graph(nodes, edges)
-        result = graph.get_adjacency_list.to_string()
+        result = graph.adjacency_list.to_string()
 
         self.assertEqual(expected, result, msg="Test")
 
