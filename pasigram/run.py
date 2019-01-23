@@ -1,4 +1,5 @@
 from pasigram.datastructures.graph import Graph
+from pasigram.candidate_generation.generator import Generator
 import pandas as pd
 
 nodes = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\nodes.csv', sep=';', index_col='id')
@@ -17,4 +18,6 @@ print("\n_______Adjacency_list_______\n")
 print(data.get_adjacency_list)
 print("\n_______Canonical_code_______\n")
 print(data.get_canonical_code)
+
+Generator(data, 2)
 
