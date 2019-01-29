@@ -9,14 +9,21 @@ class Edges:
 
        Attributes
        ----------
-           edges : pd.DataFrame
-               The edges of the graph (id, source, target)
-           ids : list
-               List of all ids of the edges
+       edges : pd.DataFrame
+           The edges of the graph (id, source, target)
+       ids : list
+           List of all ids of the edges
 
        """
 
     def __init__(self, edges: pd.DataFrame):
+        """A class to represent a set of directed edges with labels.
+
+        Parameters
+        ----------
+        edges : pd.DataFrame
+            Contains the edges of the graph
+        """
         self.__edges = edges
         self.__edge_ids = compute_edge_ids(self.__edges)
 

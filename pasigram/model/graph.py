@@ -14,26 +14,26 @@ class Graph:
 
     Attributes
     ----------
-        nodes : pd.DataFrame
-            The nodes of the graph (id, label)
-        nodes_ids : list
-            List of all ids of the nodes
-        edges : pd.DataFrame
-            The edges of the graph (id, source, target)
-        edges_ids : list
-            List of all ids of the edges
-        adjacency_matrix : pd.DataFrame
-            Adjacency matrix of the graph (ids of nodes and edges)
-        adjacency_list : pd.DataFrame
-            Adjacency list of the graph
-        node_degrees : pd.DataFrame
-            Degrees of all nodes
-        clusters_by_label_and_degree : pd.DataFrame
-            Different clusters of nodes based on their labels, in-/outgoing degrees
-        clusters_by_adjacency_list : pd.DataFrame
-               Different clusters of nodes based on their labels, in-/outgoing degrees and adjacency lists
-        canonical_code : String
-            The canonical code of the graph
+    nodes : pd.DataFrame
+        The nodes of the graph (id, label)
+    nodes_ids : list
+        List of all ids of the nodes
+    edges : pd.DataFrame
+        The edges of the graph (id, source, target)
+    edges_ids : list
+        List of all ids of the edges
+    adjacency_matrix : pd.DataFrame
+        Adjacency matrix of the graph (ids of nodes and edges)
+    adjacency_list : pd.DataFrame
+        Adjacency list of the graph
+    node_degrees : pd.DataFrame
+        Degrees of all nodes
+    clusters_by_label_and_degree : pd.DataFrame
+        Different clusters of nodes based on their labels, in-/outgoing degrees
+    clusters_by_adjacency_list : pd.DataFrame
+           Different clusters of nodes based on their labels, in-/outgoing degrees and adjacency lists
+    canonical_code : String
+        The canonical code of the graph
 
     """
 
