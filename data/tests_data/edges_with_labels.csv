@@ -1,0 +1,13 @@
+id;source;target;label;key
+1;IR;DB;x;IRDBx
+2;DB;DM;a;DBDMa
+3;DB;IR;b;DBIRb
+4;IR;DM;c;IRDMc
+5;IR;IR;e;IRIRe
+6;IR;IR;e;IRIRe
+7;DB;IR;b;DBIRb
+8;DB;DB;f;DBDBf
+9;DB;DM;a;DBDMa
+10;DB;IR;b;DBIRb
+11;IR;IR;e;IRIRe
+12;IR;DM;c;IRDMc

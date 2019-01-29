@@ -3,6 +3,20 @@ from pasigram.service.nodes_service import *
 
 
 class Nodes:
+    """A class to represent a set of nodes with labels.
+
+       ...
+
+       Attributes
+       ----------
+           nodes : pd.DataFrame
+               All nodes (id, label)
+           nodes_ids : list
+               List of all ids of the nodes
+           node_degrees : pd.DataFrame
+               Degrees of all nodes
+
+       """
 
     def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame) -> object:
         self.__nodes = nodes
@@ -10,13 +24,13 @@ class Nodes:
         self.__node_degrees = compute_node_degrees(self.__node_ids, edges)
 
     @property
-    def nodes(self):
+    def nodes(self) -> pd.DataFrame:
         return self.__nodes
 
     @property
-    def ids(self):
+    def ids(self) -> list:
         return self.__node_ids
 
     @property
-    def degrees(self):
+    def degrees(self) -> pd.DataFrame:
         return self.__node_degrees

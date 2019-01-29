@@ -16,24 +16,24 @@ class Graph:
     ----------
         nodes : pd.DataFrame
             The nodes of the graph (id, label)
-        node_ids : List
-            contains all node ids
+        nodes_ids : list
+            List of all ids of the nodes
         edges : pd.DataFrame
             The edges of the graph (id, source, target)
-        matrix : pd.DataFrame
-            adjacency matrix of the graph (ids of nodes and edges)
-
-
-    Methods
-    -------
-        build_graph(self)
-            Method for building the adjacency  matrix of the graph
-        build_adjacency_list(self)
-            Method for building the adjacency list of the nodes
-        build_node_ids(self)
-            Method for building a list of node ids
-        calculate_node_degrees(self)
-            Method for calculating the outgoing degrees of all nodes
+        edges_ids : list
+            List of all ids of the edges
+        adjacency_matrix : pd.DataFrame
+            Adjacency matrix of the graph (ids of nodes and edges)
+        adjacency_list : pd.DataFrame
+            Adjacency list of the graph
+        node_degrees : pd.DataFrame
+            Degrees of all nodes
+        clusters_by_label_and_degree : pd.DataFrame
+            Different clusters of nodes based on their labels, in-/outgoing degrees
+        clusters_by_adjacency_list : pd.DataFrame
+               Different clusters of nodes based on their labels, in-/outgoing degrees and adjacency lists
+        canonical_code : String
+            The canonical code of the graph
 
     """
 
@@ -99,11 +99,11 @@ class Graph:
         return self.__nodes.degrees
 
     @property
-    def clusters_by_label_and_degree(self):
+    def clusters_by_label_and_degree(self) -> pd.DataFrame:
         return self.__clusters.clusters_by_label_and_degree
 
     @property
-    def clusters_by_adjacency_list(self):
+    def clusters_by_adjacency_list(self) -> pd.DataFrame:
         return self.__clusters.clusters_by_adjacency_list
 
     @property
