@@ -1,0 +1,22 @@
+Todos PaSiGraM:
+[x]Datenstruktur
+	[x]Kanten -> edges.py
+		[x]edge_ids -> edges_service.py
+		[x]edges_with_node_labels -> edges_service.py
+		[x]unique_edges -> edges_service.py
+	[x]Knoten -> nodes.py
+		[x]node_ids -> nodes_service.py
+		[x]node_degrees -> nodes_service.py
+	[x]adjacency_matrix -> adjacency_matrix.py -> adjacency_matrix_service.py
+	[x]adjacency_list -> adjacency_list.py -> adjacency_list_service.py
+	[x]clusters of nodes -> clusters.py
+		[x]clusters_by_label_and_degree -> clusters_service.py
+		[x]clusters_by_adjacency_list -> clusters_service.py
+	[x]canonical_code -> graph_service.py
+[ ]Kandidatengenerierung -> generator.py
+	[x]initiale Kandidaten generieren
+	[ ]alle Kandidaten generieren
+[ ]Signifikanzberechnung -> evaluator.py
+	[ ]Teilgraph-Isomorphie
+		[x]CSP data format the for single graphs -> graph.py -> graph_service.py
+        [ ]build graph_csp matching engine

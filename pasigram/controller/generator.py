@@ -25,8 +25,8 @@ class Generator:
 
         Parameters
         ----------
-        graph : Graph (Object)
-            The graph which has to analyze
+        unique_edges : DataFrame
+            All unique edges of the input graph
         min_support : int
             The mininum support the candidates have to meet
         """
@@ -62,6 +62,8 @@ class Generator:
 
                 # add graph object (candidate) to the candidate DataFrame
                 self.__candidates.loc[current_candidate.canonical_code] = [iteration_step, current_candidate]
+
+
 
     @property
     def min_support(self) -> int:

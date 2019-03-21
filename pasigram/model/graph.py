@@ -70,6 +70,8 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         # canonical code of the graph build based on the final clusters
         self.__canonical_code = build_canonical_smallest_code(self.clusters_by_adjacency_list)
 
+        self.__csp_graph = build_csp_graph(self.clusters_by_adjacency_list)
+
     def count_edges(self):
         self.__edges.generate_edges_with_node_labels(self.nodes)
         self.__edges.generate_unique_edges()
@@ -118,3 +120,7 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
     @property
     def canonical_code(self) -> str:
         return self.__canonical_code
+
+    @property
+    def csp_graph(self) -> pd.DataFrame:
+        return self.__csp_graph
