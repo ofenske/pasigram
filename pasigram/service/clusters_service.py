@@ -15,7 +15,7 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
     Returns
     -------
     DataFrame in following format:
-    cluster_id | label | degree | elements
+    cluster_id | label | indegree | outdegree | elements
     """
     clusters = pd.DataFrame(columns=['label', 'indegree', 'outdegree', 'elements'])
 
@@ -30,7 +30,7 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
 
         # clustername of nodes = label of nodes+indegree of nodes+outdegree of nodes
         # can be used to search if there is already a cluster to which a node can be assigned
-        cluster_name = current_node_label + str(current_node_indegree) + str(current_node_outdegree)
+        cluster_name = str(current_node_label) + str(current_node_indegree) + str(current_node_outdegree)
 
         # check if the clustername for the current node already exists
         # (yes = assign node to cluster, no = define new cluster)
@@ -57,7 +57,7 @@ def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: 
     Returns
     -------
     DataFrame in following format:
-    cluster_id | label | degree | neighbours | elements
+    cluster_id | label | indegree | outdegree | neighbours | elements
     """
     final_clusters = pd.DataFrame(columns=['label', 'indegree', 'outdegree', 'neighbours', 'elements'])
 
@@ -80,7 +80,7 @@ def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: 
             node_neighbours = adjacency_list.loc[element]['neighbours']
 
             # initialize cluster name (= label of node + degree of nodes + labels of edges + labels of neighbours
-            cluster_name = node_label + str(node_indegree) + str(node_outdegree)
+            cluster_name = str(node_label) + str(node_indegree) + str(node_outdegree)
 
             # Initialize lists for edge labels and neighbour labels for the current node
             edge_labels = []
@@ -99,7 +99,7 @@ def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: 
             # Iterate over all elements of the neighbour list to build incrementally the final cluster name
             for k in range(0, len(neighbour_labels)):
                 # build final cluster name element by element
-                cluster_name += edge_labels[k] + neighbour_labels[k]
+                cluster_name += str(edge_labels[k]) + str(neighbour_labels[k])
 
             # check if cluster name not already exists
             if cluster_name not in final_clusters.index:

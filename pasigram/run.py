@@ -21,11 +21,30 @@ print("\n_______Canonical_code_______\n")
 print(graph.canonical_code)
 
 
-generator = Generator(graph, 2)
+unique_edges = graph.count_edges()
+
+generator = Generator(unique_edges, 2)
 
 print("########GENERATOR_ATTRIBUTES########")
-print("\n_______Edges_with_labels_______\n")
-print(generator.edges)
+print("\n_______Unique_edges_______\n")
+print(graph.unique_edges)
 print("\n_______Frequent_edges_______\n")
 print(generator.frequent_edges)
+
+generator.generate(1)
+
+print("\n_______Candidate#1_______\n")
+print("_______Matrix_______\n")
+print(generator.candidates.iloc[0]['graph'].adjacency_matrix)
+print("\n_______Nodes_______\n")
+print(generator.candidates.iloc[0]['graph'].nodes)
+print("\n_______Edges_______\n")
+print(generator.candidates.iloc[0]['graph'].edges)
+print("\n_______Node_degrees_______\n")
+print(generator.candidates.iloc[0]['graph'].node_degrees)
+print("\n_______Adjacency_list_______\n")
+print(generator.candidates.iloc[0]['graph'].adjacency_list)
+print("\n_______Canonical_code_______\n")
+print(generator.candidates.iloc[0]['graph'].canonical_code)
+
 

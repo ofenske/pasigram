@@ -37,9 +37,9 @@ class Nodes:
         return self.__nodes
 
     @property
-    def ids(self) -> list:
+    def nodes_ids(self) -> list:
         return self.__node_ids
 
     @property
-    def degrees(self) -> pd.DataFrame:
+    def node_degrees(self) -> pd.DataFrame:
         return self.__node_degrees

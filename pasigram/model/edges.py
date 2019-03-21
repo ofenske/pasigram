@@ -26,11 +26,27 @@ class Edges:
         """
         self.__edges = edges
         self.__edge_ids = compute_edge_ids(self.__edges)
+        self.__edges_with_node_labels = []
+        self.__unique_edges = []
+
+    def generate_edges_with_node_labels(self, nodes: pd.DataFrame) -> pd.DataFrame:
+        self.__edges_with_node_labels = compute_edges_with_node_labels(self.edges_ids, self.edges, nodes)
+
+    def generate_unique_edges(self) -> pd.DataFrame:
+        self.__unique_edges = compute_unique_edges(self.edges_with_node_labels)
 
     @property
     def edges(self) -> pd.DataFrame:
         return self.__edges
 
     @property
-    def ids(self) -> list:
+    def edges_with_node_labels(self):
+        return self.__edges_with_node_labels
+
+    @property
+    def unique_edges(self):
+        return self.__unique_edges
+
+    @property
+    def edges_ids(self) -> list:
         return self.__edge_ids

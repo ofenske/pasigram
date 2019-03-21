@@ -7,7 +7,7 @@ from pasigram.model.clusters import *
 from pasigram.service.graph_service import *
 
 
-class Graph:
+class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
     """A class to represent a directed graph with labels for the edges and nodes.
 
     ...
@@ -58,17 +58,22 @@ class Graph:
         self.__nodes = Nodes(nodes, self.edges)
 
         # adjacency matrix of the graph (pd.DataFrame)
-        self.__adjacency_matrix = AdjacencyMatrix(self.__nodes.ids, self.__edges.ids, self.__edges.edges)
+        self.__adjacency_matrix = AdjacencyMatrix(self.nodes_ids, self.edges_ids, self.edges)
 
         # adjacency list of the graph (pd.DataFrame)
-        self.__adjacency_list = AdjacencyList(self.__nodes.ids, self.__edges.edges, self.__nodes.nodes,
-                                              self.__nodes.degrees)
+        self.__adjacency_list = AdjacencyList(self.nodes_ids, self.edges, self.nodes,
+                                              self.node_degrees)
 
         # initial clusters: nodes clustered by label and degrees (pd.DataFrame)
         self.__clusters = Clusters(self.nodes, self.node_degrees, self.adjacency_list)
 
         # canonical code of the graph build based on the final clusters
         self.__canonical_code = build_canonical_smallest_code(self.clusters_by_adjacency_list)
+
+    def count_edges(self):
+        self.__edges.generate_edges_with_node_labels(self.nodes)
+        self.__edges.generate_unique_edges()
+        return self.unique_edges
 
     @property
     def adjacency_matrix(self) -> pd.DataFrame:
@@ -79,16 +84,20 @@ class Graph:
         return self.__nodes.nodes
 
     @property
-    def nodes_ids(self) -> pd.DataFrame:
-        return self.__nodes.ids
+    def nodes_ids(self) -> list:
+        return self.__nodes.nodes_ids
 
     @property
     def edges(self) -> pd.DataFrame:
         return self.__edges.edges
 
     @property
-    def edges_ids(self) -> pd.DataFrame:
-        return self.__edges.ids
+    def unique_edges(self):
+        return self.__edges.unique_edges
+
+    @property
+    def edges_ids(self) -> list:
+        return self.__edges.edges_ids
 
     @property
     def adjacency_list(self) -> pd.DataFrame:
@@ -96,7 +105,7 @@ class Graph:
 
     @property
     def node_degrees(self) -> pd.DataFrame:
-        return self.__nodes.degrees
+        return self.__nodes.node_degrees
 
     @property
     def clusters_by_label_and_degree(self) -> pd.DataFrame:
