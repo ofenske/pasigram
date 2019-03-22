@@ -48,7 +48,7 @@ def build_csp_graph(clusters_by_adjacency_list: pd.DataFrame) -> pd.DataFrame:
     Returns
     -------
     DataFrame in following format:
-    nodeid|nodelabel|indegree|outdegree|neighbours|frequency
+    nodeid|label|indegree|outdegree|neighbours|frequency
     """
 
     # get keyset of all nodeids
