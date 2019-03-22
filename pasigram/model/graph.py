@@ -34,6 +34,8 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
            Different clusters of nodes based on their labels, in-/outgoing degrees and adjacency lists
     canonical_code : String
         The canonical code of the graph
+    csp_graph : pd.DataFrame
+        The CSP representation of the graph
 
     """
 
@@ -70,6 +72,7 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         # canonical code of the graph build based on the final clusters
         self.__canonical_code = build_canonical_smallest_code(self.clusters_by_adjacency_list)
 
+        # the data structure needed to solve the csp problem
         self.__csp_graph = build_csp_graph(self.clusters_by_adjacency_list)
 
     def count_edges(self):

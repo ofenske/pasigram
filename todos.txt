@@ -18,5 +18,5 @@ Todos PaSiGraM:
 	[ ]alle Kandidaten generieren
 [ ]Signifikanzberechnung -> evaluator.py
 	[ ]Teilgraph-Isomorphie
-		[x]CSP data format the for single graphs -> graph.py -> graph_service.py
+		[x]CSP data format for the single graphs -> graph.py -> graph_service.py
         [ ]build graph_csp matching engine
