@@ -4,15 +4,15 @@ from pasigram.model.graph import *
 class Evaluator:
     """ A class to represent the evaluator component of the PaSiGraM algorithm.
 
-            ...
+    ...
 
-            Attributes
-            ----------
-            min_support: Integer
-                The minimum support the graphs have to meet
-            input_graph : pd.DataFrame
-                The input graph to use to compute the frequencies of the candidates
-           """
+    Attributes
+    ----------
+    min_support: Integer
+        The minimum support the graphs have to meet
+    input_graph : pd.DataFrame
+        The input graph to use to compute the frequencies of the candidates
+    """
 
     def __init__(self, csp_graph: pd.DataFrame, min_support: int) -> object:
         """
@@ -26,10 +26,10 @@ class Evaluator:
         """
         self.__min_support = min_support
         self.__input_graph = csp_graph
+        self.__frequent_subgraphs = pd.DataFrame(columns=['number_of_edges', 'graph'])
 
     def compute_candidate_frequency(self, candidate_csp_graph: pd.DataFrame) -> int:
-        """
-        Method to compute the frequency of one candidate in the input graph
+        """Method to compute the frequency of one candidate in the input graph.
 
         Parameters
         ----------
@@ -40,6 +40,7 @@ class Evaluator:
         -------
         The frequency of the candidate in the input graph.
         """
+
         # initialize candidate frequency
         candidate_frequency = -1
 
@@ -72,11 +73,14 @@ class Evaluator:
                     potential_partner_node_neighbour_list = potential_partner_node.loc['neighbours']
 
                     # check if neighbour list constraint is violated
+                    # todo: check for alternatives with better performance
+                    #  (check if one list is subset of the other list)
                     if all([element in potential_partner_node_neighbour_list for element in
                             current_node_neighbour_list]):
                         potential_partner_node_frequency = potential_partner_node.loc['frequency']
                         current_node_frequency += potential_partner_node_frequency
 
+            # check if the frequency of current candidate node is lower then min_frequency of already evaluated nodes
             if current_node_frequency < candidate_frequency or candidate_frequency < 0:
                 candidate_frequency = current_node_frequency
 

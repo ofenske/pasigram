@@ -59,6 +59,10 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         # nodes of the graph (pd.DataFrame)
         self.__nodes = Nodes(nodes, self.edges)
 
+        # generate edges with node labels and all unique edges for the graph
+        self.__edges.generate_edges_with_node_labels(self.nodes)
+        self.__edges.generate_unique_edges()
+
         # adjacency matrix of the graph (pd.DataFrame)
         self.__adjacency_matrix = AdjacencyMatrix(self.nodes_ids, self.edges_ids, self.edges)
 
@@ -74,11 +78,6 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
 
         # the data structure needed to solve the csp problem
         self.__csp_graph = build_csp_graph(self.clusters_by_adjacency_list)
-
-    def count_edges(self):
-        self.__edges.generate_edges_with_node_labels(self.nodes)
-        self.__edges.generate_unique_edges()
-        return self.unique_edges
 
     @property
     def adjacency_matrix(self) -> pd.DataFrame:
@@ -103,6 +102,10 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
     @property
     def edges_ids(self) -> list:
         return self.__edges.edges_ids
+
+    @property
+    def edges_with_node_labels(self) -> pd.DataFrame:
+        return self.__edges.edges_with_node_labels
 
     @property
     def adjacency_list(self) -> pd.DataFrame:

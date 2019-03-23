@@ -1,22 +1,33 @@
 Todos PaSiGraM:
-[x]Datenstruktur
-	[x]Kanten -> edges.py
-		[x]edge_ids -> edges_service.py
-		[x]edges_with_node_labels -> edges_service.py
-		[x]unique_edges -> edges_service.py
-	[x]Knoten -> nodes.py
-		[x]node_ids -> nodes_service.py
-		[x]node_degrees -> nodes_service.py
-	[x]adjacency_matrix -> adjacency_matrix.py -> adjacency_matrix_service.py
-	[x]adjacency_list -> adjacency_list.py -> adjacency_list_service.py
-	[x]clusters of nodes -> clusters.py
-		[x]clusters_by_label_and_degree -> clusters_service.py
-		[x]clusters_by_adjacency_list -> clusters_service.py
-	[x]canonical_code -> graph_service.py
-[ ]Kandidatengenerierung -> generator.py
-	[x]initiale Kandidaten generieren
-	[ ]alle Kandidaten generieren
-[ ]Signifikanzberechnung -> evaluator.py
-	[ ]Teilgraph-Isomorphie
-		[x]CSP data format for the single graphs -> graph.py -> graph_service.py
-        [ ]build graph_csp matching engine
+[ ]single execution
+    [x]Datenstruktur: Graph -> graph.py
+        [x]Kanten -> edges.py
+            [x]edge_ids -> edges_service.py
+            [x]edges_with_node_labels -> edges_service.py
+            [x]unique_edges -> edges_service.py
+        [x]Knoten -> nodes.py
+            [x]node_ids -> nodes_service.py
+            [x]node_degrees -> nodes_service.py
+        [x]adjacency_matrix -> adjacency_matrix.py -> adjacency_matrix_service.py
+        [x]adjacency_list -> adjacency_list.py -> adjacency_list_service.py
+        [x]clusters of nodes -> clusters.py
+            [x]clusters_by_label_and_degree -> clusters_service.py
+            [x]clusters_by_adjacency_list -> clusters_service.py
+        [x]canonical_code -> graph_service.py
+    [ ]Kandidatengenerierung -> generator.py
+        [x]data structure to save the current n-edges candidates
+        [x]method for generating initial candidates
+        [ ]method to generate n+1-edges candidates out of n-edges frequent subgraphs
+            [ ]Apriori-join-method
+        [ ]method to evaluate if two n-size-graphs have the same n-1-size-subgraphs (see spyder)
+    [ ]Signifikanzberechnung -> evaluator.py
+        [ ]Teilgraph-Isomorphie
+            [x]CSP data format for the single graphs -> graph.py -> graph_service.py
+            [x]build a method to compute the candidate frequencies -> evaluator.py -> compute_candidate_frequency()
+            [ ]build method to check min_support constraint for the candidates
+    [ ]interface for pasigram
+        [ ]build data structure to save all frequent subgraphs (with extra column for the relative subgraph frequency)
+
+
+[ ]parallel execution
+

@@ -6,19 +6,19 @@ from pasigram.model.graph import *
 class Generator:
     """ A class to represent the generator component of the PaSiGraM algorithm.
 
-        ...
+    ...
 
-        Attributes
-        ----------
-        nodes : pd.DataFrame
-            The nodes of the graph (id, label)
-        edges : pd.DataFrame
-            The edges of the graph (id, source, target)
-        min_support: Integer
-            The minimum support the graphs have to meet
-        frequent_edges : pd.DataFrame
-            The frequent edges which were generated based on the min_support and edges of the graph
-       """
+    Attributes
+    ----------
+    nodes : pd.DataFrame
+        The nodes of the graph (id, label)
+    edges : pd.DataFrame
+        The edges of the graph (id, source, target)
+    min_support: Integer
+        The minimum support the graphs have to meet
+    frequent_edges : pd.DataFrame
+        The frequent edges which were generated based on the min_support and edges of the graph
+    """
 
     def __init__(self, unique_edges: pd.DataFrame, min_support: int) -> object:
         """A class to represent the generator component of the PaSiGraM algorithm.
@@ -32,9 +32,9 @@ class Generator:
         """
         self.__frequent_edges = compute_frequent_edges(unique_edges, min_support)
         self.__min_support = min_support
-        self.__candidates = pd.DataFrame(columns=['number_of_edges', 'graph'])
+        self.__candidates = pd.DataFrame(columns=['iteration_step', 'graph'])
 
-    def generate(self, iteration_step: int):
+    def generate_initial_candidates(self, iteration_step: int):
 
         # generate initial candidates with one edge
         if iteration_step == 1:
@@ -62,7 +62,6 @@ class Generator:
 
                 # add graph object (candidate) to the candidate DataFrame
                 self.__candidates.loc[current_candidate.canonical_code] = [iteration_step, current_candidate]
-
 
 
     @property
