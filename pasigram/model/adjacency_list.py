@@ -5,14 +5,13 @@ from pasigram.service.adjacency_list_service import *
 class AdjacencyList:
     """A class to represent the adjacency list of a graph.
 
-       ...
+    ...
 
-       Attributes
-       ----------
-           adjacency_list : pd.DataFrame
-               Adjacency list of the graph
-
-       """
+    Attributes
+    ----------
+    adjacency_list : pd.DataFrame
+        Adjacency list of the graph
+    """
 
     def __init__(self, node_ids: list, edges: pd.DataFrame, nodes: pd.DataFrame, node_degrees: pd.DataFrame):
         """A class to represent the adjacency list of a graph.

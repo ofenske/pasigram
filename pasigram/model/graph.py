@@ -45,9 +45,9 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         Parameters
         ----------
         nodes : DataFrame
-            Contains all nodes of the graph.
+            Contains all nodes of the graph. Should be in the following format: id|label
         edges : DataFrame
-            Contains all edges of the graph.
+            Contains all edges of the graph. Should be in the following format: id|source|target|label
 
         Returns
         -------
@@ -130,3 +130,27 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
     @property
     def csp_graph(self) -> pd.DataFrame:
         return self.__csp_graph
+
+    @property
+    def root_node(self) -> str:
+        return self.__nodes.root_node
+
+    @property
+    def right_most_node(self) -> str:
+        return self.__nodes.right_most_node
+
+    @property
+    def right_most_path(self) -> list:
+        return self.__edges.right_most_path
+
+    @right_most_path.setter
+    def set_right_most_path(self, edge_ids: list):
+        self.__edges.set_right_most_path = edge_ids
+
+    @root_node.setter
+    def set_root_node(self, node_id):
+        self.__nodes.set_root_node = node_id
+
+    @right_most_node.setter
+    def set_right_most_node(self, node_id):
+        self.__nodes.set_right_most_node = node_id

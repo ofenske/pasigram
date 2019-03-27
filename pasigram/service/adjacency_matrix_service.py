@@ -15,7 +15,8 @@ def compute_adjacency_matrix(node_ids: list, edge_ids: list, edges: pd.DataFrame
 
     Returns
     -------
-    Matrix as DataFrame
+    DataFrame
+        The adjacency matrix representation of the graph
     """
     # initialize the adjacency matrix
     graph = pd.DataFrame(index=node_ids, columns=node_ids)

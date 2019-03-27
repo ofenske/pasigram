@@ -1,5 +1,4 @@
-from pasigram.controller.evaluator import *
-from pasigram.controller.generator import *
+from pasigram.controller.csp.evaluator import *
 
 
 class Pasigram:

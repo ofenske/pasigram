@@ -61,7 +61,6 @@ class TestGraph(TestCase):
                                         "2": ["2", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
 
         graph = Graph(nodes, edges)
-        graph.count_edges()
         result = graph.unique_edges.to_string()
         self.assertEqual(expected, result, msg="Test for the unique edges")
 
@@ -160,3 +159,4 @@ class TestGraph(TestCase):
         code1 = graph1.canonical_code
         code2 = graph2.canonical_code
         self.assertIsNot(code1, code2, msg="Test if two different graphs produces different canonical codes")
+

@@ -18,8 +18,11 @@ Todos PaSiGraM:
         [x]data structure to save the current n-edges candidates
         [x]method for generating initial candidates
         [ ]method to generate n+1-edges candidates out of n-edges frequent subgraphs
-            [ ]Apriori-join-method
-        [ ]method to evaluate if two n-size-graphs have the same n-1-size-subgraphs (see spyder)
+            [ ]Edge extension approach
+                [x]data structure to save right-most-path, root-node and right-most-node for every graph
+                [x]method for computing all node ids of the right-most-path
+
+        [x]method to evaluate if two n-size-graphs have the same n-1-size-subgraphs (see spyder)
     [ ]Signifikanzberechnung -> evaluator.py
         [ ]Teilgraph-Isomorphie
             [x]CSP data format for the single graphs -> graph.py -> graph_service.py
@@ -30,4 +33,26 @@ Todos PaSiGraM:
 
 
 [ ]parallel execution
+
+Join-Generierung:
+    Negativ:
+        - join ist teuer
+        - Voraussetzung für Join:
+            - Berechnung ob zwei Graphen die gleiche maximal korrekte Teilmatrix besitzen
+        - Join von zwei Graphen kann in vielen unterschiedlichen Graphen resultieren
+            - hohe Anzahl an möglichen Alternativen sind beim join zu beachten -> hoher Speicheraufwand
+        - schlecht parallelisierbar
+            - welche häufigen Teilgraphen müssen auf welchen DataNode (gleiche maximal korrekte Teilmatrix)
+    Positiv:
+        - leicht zu implementieren
+            - allerdings müssen alle möglichen Fälle die bei einem Join auftreten können ermittelt und abgedeckt werden
+
+Edge-Extension-Generierung:
+    Positiv:
+        - keine teure Operation
+        - mit "right-most-extension" existiert eine gute Heuristik
+        - leicht zu parallelisieren
+    Negativ:
+        - man muss sich für jeden Graphen den "right-most-path" merken
+
 

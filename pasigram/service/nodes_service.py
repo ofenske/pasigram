@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def compute_node_ids(nodes: pd.DataFrame) -> list:
-    """
+    """Method for computing the ids of all nodes
 
     Parameters
     ----------
@@ -11,13 +11,14 @@ def compute_node_ids(nodes: pd.DataFrame) -> list:
 
     Returns
     -------
-    A list with all ids of the nodes
+    list
+        A list with all ids of the nodes
     """
     return list(nodes.index)
 
 
 def compute_node_degrees(node_ids: list, edges: pd.DataFrame) -> pd.DataFrame:
-    """
+    """Method for computing the indegree and outdegree for every node in a graph
 
     Parameters
     ----------
@@ -28,9 +29,9 @@ def compute_node_degrees(node_ids: list, edges: pd.DataFrame) -> pd.DataFrame:
 
     Returns
     -------
-    A DataFrame with all nodes and their degrees in it:
-    |index|Indegree|Outdegree|
-    index = node_ids
+    DataFrame
+        Format: Indegree|Outdegree
+        index = node_ids
     """
     node_degrees = pd.DataFrame(index=node_ids, columns=['Indegree', 'Outdegree'])
     for i in range(0, len(node_ids)):

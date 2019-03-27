@@ -17,8 +17,9 @@ def compute_edges_with_node_labels(edge_ids: list, edges: pd.DataFrame, nodes: p
 
     Returns
     -------
-    pd.DataFrame: Contains the clusters of nodes in following format
-    |cluster_id|source|target|label|key|
+    DataFrame
+        Contains all edges with labels for source and target nodes. Format: source|target|label|key
+        index = numerical
     """
     edges_with_node_labels = pd.DataFrame(columns=['source', 'target', 'label', 'key'], index=edge_ids)
 
@@ -50,7 +51,9 @@ def compute_edges_with_node_labels(edge_ids: list, edges: pd.DataFrame, nodes: p
 
 
 def compute_unique_edges(edges_with_node_labels: pd.DataFrame) -> pd.DataFrame:
-    """
+    """Method for computing the unique edges of a graph.
+
+    ...
 
     Parameters
     ----------
@@ -59,9 +62,9 @@ def compute_unique_edges(edges_with_node_labels: pd.DataFrame) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame: Contains all unique edges in the following format:
-    edge_key|source|target|label|frequency|
-    edge_key = key of the input DataFrame
+    DataFrame
+        Contains all unique edges in the following format: source|target|label|frequency
+        index = entry of 'key'-column of edges_with_node_labels (=source_node_label+target_node_label+edge_label)
     """
     frequent_edges = pd.DataFrame(columns=['source', 'target', 'label', 'frequency'])
     # get the unique keys from all edges
@@ -88,7 +91,9 @@ def compute_unique_edges(edges_with_node_labels: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_edge_ids(edges: pd.DataFrame) -> list:
-    """
+    """Method for computing a list with ids of al edges in it
+
+    ...
 
     Parameters
     ----------
@@ -97,13 +102,16 @@ def compute_edge_ids(edges: pd.DataFrame) -> list:
 
     Returns
     -------
-    A list with all ids of the edges.
+    list
+        A list with all ids of the edges.
     """
     return list(edges.index)
 
 
 def compute_frequent_edges(unique_edges: pd.DataFrame, min_support: int) -> pd.DataFrame:
-    """
+    """Method for computing all frequent edges of the graph
+
+    ...
 
     Parameters
     ----------
@@ -114,9 +122,11 @@ def compute_frequent_edges(unique_edges: pd.DataFrame, min_support: int) -> pd.D
 
     Returns
     -------
-    pd.DataFrame in the following format:
-    |edge_id|source|target|label|frequency|
+    DataFrame
+        Format: source|target|label|frequency
+        index = index of unique_edges (=source_node_label+target_node_label+edge_label)
     """
+    # todo: refactor column names: source -> source_node_label, target->target_node_label, label->edge_label
     frequent_edges = pd.DataFrame(columns=['source', 'target', 'label', 'frequency'])
     key_set = list(unique_edges.index)
 

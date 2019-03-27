@@ -18,9 +18,9 @@ def compute_adjacency_list(node_ids: list, edges: pd.DataFrame, nodes: pd.DataFr
 
     Returns
     -------
-    DataFrame in following format:
-    node_id | neighbours
-    neighbours = [edge_label, neighbour_vertex_label, neighbour_vertex_indegree, neighbour_vertex_outdegree]
+    DataFrame
+        Format: node_id | neighbours
+        neighbours = [edge_label, neighbour_vertex_label, neighbour_vertex_indegree, neighbour_vertex_outdegree]
     """
     # initialize adjacency list
     adjacency_list = pd.DataFrame(index=node_ids, columns=["neighbours"])

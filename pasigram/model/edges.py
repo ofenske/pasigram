@@ -5,16 +5,21 @@ from pasigram.service.edges_service import *
 class Edges:
     """A class to represent a set of directed edges with labels.
 
-       ...
+    ...
 
-       Attributes
-       ----------
-       edges : pd.DataFrame
-           The edges of the graph (id, source, target)
-       ids : list
-           List of all ids of the edges
-
-       """
+    Attributes
+    ----------
+    edges : pd.DataFrame
+        The edges of the graph (id, source, target)
+    edge_ids : list
+        List of all ids of the edges
+    edges_with_node_labels : pd.DataFrame
+        Edges with labels for source and target instead of the ids
+    unique_edges : pd.DataFrame
+        All unique edges of the graph (labels for source and target nodes - not the ids)
+    right_most_path : list
+        List of all edge ids which are part of the right_most_path
+    """
 
     def __init__(self, edges: pd.DataFrame):
         """A class to represent a set of directed edges with labels.
@@ -28,6 +33,7 @@ class Edges:
         self.__edge_ids = compute_edge_ids(self.__edges)
         self.__edges_with_node_labels = pd.DataFrame()
         self.__unique_edges = pd.DataFrame
+        self.__right_most_path = []
 
     def generate_edges_with_node_labels(self, nodes: pd.DataFrame):
         self.__edges_with_node_labels = compute_edges_with_node_labels(self.edges_ids, self.edges, nodes)
@@ -50,3 +56,11 @@ class Edges:
     @property
     def edges_ids(self) -> list:
         return self.__edge_ids
+
+    @property
+    def right_most_path(self):
+        return self.__right_most_path
+
+    @right_most_path.setter
+    def set_right_most_path(self, edge_ids: list):
+        self.__right_most_path = edge_ids

@@ -11,7 +11,8 @@ def build_canonical_smallest_code(final_clusters: pd.DataFrame) -> str:
 
     Returns
     -------
-    String
+    string
+        The canonical code for the graph
     """
 
     # get all keys from final clusters
@@ -37,8 +38,7 @@ def build_canonical_smallest_code(final_clusters: pd.DataFrame) -> str:
 
 
 def build_csp_graph(clusters_by_adjacency_list: pd.DataFrame) -> pd.DataFrame:
-    """
-    Method for building the CSP representation of the graph.
+    """Method for building the CSP representation of the graph.
 
     Parameters
     ----------
@@ -47,8 +47,9 @@ def build_csp_graph(clusters_by_adjacency_list: pd.DataFrame) -> pd.DataFrame:
 
     Returns
     -------
-    DataFrame in following format:
-    nodeid|label|indegree|outdegree|neighbours|frequency
+    DataFrame
+        Format: label|indegree|outdegree|neighbours|frequency
+        index = cluster index (=node_label + node_indegree + node_outdegree + node_neighbours_list)
     """
 
     # get keyset of all nodeids
@@ -86,3 +87,5 @@ def build_csp_graph(clusters_by_adjacency_list: pd.DataFrame) -> pd.DataFrame:
         csp_graph.loc[node_id] = [node_label, node_indegree, node_outdegree, final_neighbour_list, node_frequency]
 
     return csp_graph
+
+

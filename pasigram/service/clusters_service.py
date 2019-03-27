@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.DataFrame) -> pd.DataFrame:
-    """Method for cluster nodes by their labels and degrees.
+    """Method for clustering nodes by their labels and degrees.
 
     Parameters
     ----------
@@ -14,8 +14,9 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
 
     Returns
     -------
-    DataFrame in following format:
-    cluster_id | label | indegree | outdegree | elements
+    DataFrame
+        Format: label | indegree | outdegree | elements
+        index = node_label + node_indegree + node_outdegree
     """
     clusters = pd.DataFrame(columns=['label', 'indegree', 'outdegree', 'elements'])
 
@@ -43,33 +44,33 @@ def cluster_nodes_by_label_and_degree(nodes: pd.DataFrame, node_degrees: pd.Data
     return clusters
 
 
-def cluster_nodes_by_adjacency_list(pre_clusters: pd.DataFrame, adjacency_list: pd.DataFrame) -> pd.DataFrame:
-    """Methode for cluster nodes based on their labels, degrees and adjacency list
+def cluster_nodes_by_adjacency_list(cluster_by_label_and_degree: pd.DataFrame, adjacency_list: pd.DataFrame) -> pd.DataFrame:
+    """Method for clustering nodes based on their labels, degrees and adjacency list
 
     Parameters
     ----------
-    pre_clusters : DataFrame
+    cluster_by_label_and_degree : DataFrame
         The DataFrame with the clusters predefined by cluster_nodes_by_label_and_degree()
-
     adjacency_list : DataFrame
         The DataFrame which contains the adjacency list for every node.
 
     Returns
     -------
-    DataFrame in following format:
-    cluster_id | label | indegree | outdegree | neighbours | elements
+    DataFrame
+        Format: cluster_id | label | indegree | outdegree | neighbours | elements
+        index = node_label + node_indegree + node_outdegree + node_neighbours_list
     """
     final_clusters = pd.DataFrame(columns=['label', 'indegree', 'outdegree', 'neighbours', 'elements'])
 
     # iterate over all nodes of all clusters of the predefined clusters
-    for i in range(0, len(pre_clusters)):
+    for i in range(0, len(cluster_by_label_and_degree)):
         # get all nodes of the cluster
-        cluster_elements = pre_clusters.iloc[i]['elements']
+        cluster_elements = cluster_by_label_and_degree.iloc[i]['elements']
 
         # get label, degree of the current cluster
-        node_label = pre_clusters.iloc[i]['label']
-        node_indegree = pre_clusters.iloc[i]['indegree']
-        node_outdegree = pre_clusters.iloc[i]['outdegree']
+        node_label = cluster_by_label_and_degree.iloc[i]['label']
+        node_indegree = cluster_by_label_and_degree.iloc[i]['indegree']
+        node_outdegree = cluster_by_label_and_degree.iloc[i]['outdegree']
 
         # iterate over all nodes of the current cluster
         for j in range(0, len(cluster_elements)):
