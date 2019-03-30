@@ -34,12 +34,14 @@ class Generator:
         self.__frequent_edges = compute_frequent_edges(unique_edges, min_support)
         self.__min_support = min_support
         self.__candidates = pd.DataFrame(columns=['size', 'graph'])
-        self.__current_max_size = 0
+        self.__current_max_size = 1
 
-    def generate_initial_candidates(self):
+    def generate_initial_candidates(self) -> pd.DataFrame:
         """Method for generating the initial candidates for the given input graph
 
         """
+        initial_patterns = pd.DataFrame(columns=['size', 'graph'])
+
         # get all frequent edges to initialize graph objects
         join_set = self.frequent_edges
 
@@ -55,20 +57,22 @@ class Generator:
             # initialize DataFrames for the input nodes and edges
             nodes = pd.DataFrame(data=[source_node_label, target_node_label], columns=['label'],
                                  index=[source_node_id, target_node_id])
-            edges = pd.DataFrame.from_dict({"0": [source_node_id, target_node_id, edge_label]}, orient='index',
+            edges = pd.DataFrame.from_dict({0: [source_node_id, target_node_id, edge_label]}, orient='index',
                                            columns=['source', 'target', 'label'])
 
             # initialize graph object for every candidate
             current_candidate = Graph(nodes, edges)
 
             # set root node, right most node and right most path for the graph
-            current_candidate.set_root_node = source_node_id
-            current_candidate.set_right_most_node = target_node_id
-            current_candidate.set_right_most_path = ["0"]
+            current_candidate.root_node = source_node_id
+            current_candidate.right_most_node = target_node_id
+            current_candidate.right_most_path = [source_node_id, target_node_id]
 
             # add graph object (candidate) to the candidate DataFrame
-            self.__candidates.loc[current_candidate.canonical_code] = [1, current_candidate]
+            initial_patterns.loc[current_candidate.canonical_code] = [1, current_candidate]
         self.__current_max_size += 1
+
+        return initial_patterns
 
     def generate_new_subgraphs(self, candidates: pd.DataFrame) -> pd.DataFrame:
         """Method for generating new n+1-size graphs out of n-size frequent graphs
@@ -78,19 +82,15 @@ class Generator:
         candidates : pd.DataFrame
             Contains all frequent graphs of size n
         """
-
-        # reset the candidates DataFrame
-        self.__candidates.drop(self.__candidates.index, inplace=True)
-        # new_subgraphs = pd.DataFrame(columns=['size', 'graph'])
-
+        new_candidates = pd.DataFrame(columns=['graph', 'size'])
+        counter = 0
         # iterate over all graphs in candidates
         for i in range(0, len(candidates)):
             # get the Graph object of the current_candidate
             current_candidate = candidates.iloc[i]['graph']
 
             # get the ids of all nodes on the right_most_path of current_candidate
-            right_most_path_nodes = compute_right_most_path_nodes(current_candidate.right_most_path,
-                                                                  current_candidate.edges)
+            right_most_path_nodes = current_candidate.right_most_path
 
             # iterate over all nodes of right_most_path_nodes
             for j in range(0, len(right_most_path_nodes)):
@@ -107,7 +107,14 @@ class Generator:
                     current_relevant_edge = relevant_edges.iloc[k]
 
                     # get the Graph object of the new candidate
-                    new_candidate = generate_new_candidate(current_candidate, current_relevant_edge, current_node_id)
+                    new_pattern = add_new_forward_edge(current_candidate, current_relevant_edge, current_node_id)
+                    counter += 1
+                    # print("\n Candidate ", counter)
+                    # print("\n", new_pattern.csp_graph)
+                    new_pattern_code = new_pattern.canonical_code
+                    if new_pattern_code not in new_candidates.index:
+                        new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+        return new_candidates
 
     @property
     def min_support(self) -> int:
@@ -125,30 +132,3 @@ class Generator:
     def current_max_size(self):
         return self.__current_max_size
 
-    """def generate_candidates(self):
-        if self.current_max_size == 1:
-            candidate_set = self.candidates[self.candidates['size'] == 1]
-
-            key_set = list(candidate_set.index)
-            for i in range(0, len(key_set)):
-                candidate1 = candidate_set.loc[key_set[i]]['graph']
-                nodes_candidate1 = candidate1.nodes.values.tolist()
-                for j in range(i, len(key_set)):
-                    if i == j:
-                        continue
-                    candidate2 = candidate_set.loc[key_set[j]]['graph']
-                    nodes_candidate2 = candidate2.nodes.values.tolist()
-
-                    common_nodes = set(map(tuple, nodes_candidate1)) & set(map(tuple, nodes_candidate2))
-                    res_list = list(map(list, common_nodes))
-
-                    if len(res_list) == len(nodes_candidate1) - 1:
-                        # todo: merge the two n-size candidates to one n+1-size candidate
-
-                        print("\ncommon graphs")
-                        print("\nGraph1\n")
-                        print(candidate1.csp_graph)
-                        print("\nGraph2\n")
-                        print(candidate2.csp_graph)
-
-        self.__current_max_size += 1"""

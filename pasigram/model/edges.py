@@ -33,7 +33,6 @@ class Edges:
         self.__edge_ids = compute_edge_ids(self.__edges)
         self.__edges_with_node_labels = pd.DataFrame()
         self.__unique_edges = pd.DataFrame
-        self.__right_most_path = []
 
     def generate_edges_with_node_labels(self, nodes: pd.DataFrame):
         self.__edges_with_node_labels = compute_edges_with_node_labels(self.edges_ids, self.edges, nodes)
@@ -56,11 +55,3 @@ class Edges:
     @property
     def edges_ids(self) -> list:
         return self.__edge_ids
-
-    @property
-    def right_most_path(self):
-        return self.__right_most_path
-
-    @right_most_path.setter
-    def set_right_most_path(self, edge_ids: list):
-        self.__right_most_path = edge_ids

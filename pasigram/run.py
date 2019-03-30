@@ -1,11 +1,13 @@
 from pasigram.controller.csp.evaluator import *
 from pasigram.controller.candidate_generation.generator import *
+import pasigram.model.graph
 import pandas as pd
 
 nodes = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\nodes.csv', sep=';', index_col='id')
 edges = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\edges.csv', sep=';', index_col='id')
 graph = Graph(nodes, edges)
 
+graph.set_root_node = 1
 print("########GRAPH_ATTRIBUTES########")
 print("_______Matrix_______\n")
 print(graph.adjacency_matrix)
@@ -32,9 +34,12 @@ print(graph.unique_edges)
 print("\n_______Frequent_edges_______\n")
 print(generator.frequent_edges)
 
-generator.generate_initial_candidates()
+print(type(graph.edges.iloc[0]['target']))
+initial_patterns = generator.generate_initial_candidates()
+print(type(initial_patterns.iloc[0]['graph'].edges.iloc[0]['target']))
+generator.generate_new_subgraphs(initial_patterns)
 
-print("\n_______Candidate#1_______\n")
+"""print("\n_______Candidate#1_______\n")
 print("_______Matrix_______\n")
 print(generator.candidates.iloc[1]['graph'].adjacency_matrix)
 print("\n_______Nodes_______\n")
@@ -54,7 +59,5 @@ print("\n_______csp_graph_______\n")
 print(generator.candidates.iloc[1]['graph'].csp_graph)
 
 evaluator = Evaluator(graph.csp_graph, 2)
-print("\nThe frequency of the current candidate is: ", evaluator.compute_candidate_frequency(generator.candidates.iloc[1]['graph'].csp_graph))
-
-
-
+print("\nThe frequency of the current candidate is: ",
+      evaluator.compute_candidate_frequency(generator.candidates.iloc[1]['graph'].csp_graph))"""

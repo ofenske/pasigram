@@ -141,16 +141,16 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
 
     @property
     def right_most_path(self) -> list:
-        return self.__edges.right_most_path
+        return self.__nodes.right_most_path
 
     @right_most_path.setter
-    def set_right_most_path(self, edge_ids: list):
-        self.__edges.set_right_most_path = edge_ids
+    def right_most_path(self, edge_ids: list):
+        self.__nodes.right_most_path = edge_ids
 
     @root_node.setter
-    def set_root_node(self, node_id):
-        self.__nodes.set_root_node = node_id
+    def root_node(self, node_id):
+        self.__nodes.root_node = node_id
 
     @right_most_node.setter
-    def set_right_most_node(self, node_id):
-        self.__nodes.set_right_most_node = node_id
+    def right_most_node(self, node_id):
+        self.__nodes.right_most_node = node_id

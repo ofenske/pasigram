@@ -36,6 +36,7 @@ class Nodes:
         self.__node_degrees = compute_node_degrees(self.__node_ids, edges)
         self.__root_node = None
         self.__right_most_node = None
+        self.__right_most_path = []
 
     @property
     def nodes(self) -> pd.DataFrame:
@@ -57,10 +58,18 @@ class Nodes:
     def root_node(self):
         return self.__root_node
 
+    @property
+    def right_most_path(self):
+        return self.__right_most_path
+
     @right_most_node.setter
-    def set_right_most_node(self, node_id):
+    def right_most_node(self, node_id):
         self.__right_most_node = node_id
 
     @root_node.setter
-    def set_root_node(self, node_id):
+    def root_node(self, node_id):
         self.__root_node = node_id
+
+    @right_most_path.setter
+    def right_most_path(self, path: list):
+        self.__right_most_path = path

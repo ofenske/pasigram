@@ -6,13 +6,13 @@ from pasigram.controller.candidate_generation.utils import *
 class TestRightMostPath(TestCase):
 
     def test_compute_right_most_path_nodes(self):
-        expected = sorted(["1", "0", "2"])
-        edges = pd.DataFrame.from_dict({"0": ["0", "1", "a"],
-                                        "1": ["1", "0", "b"],
-                                        "2": ["1", "2", "a"]}, orient='index',
+        expected = sorted([1, 0, 2])
+        edges = pd.DataFrame.from_dict({0: [0, 1, "a"],
+                                        1: [1, 0, "b"],
+                                        2: [1, 2, "a"]}, orient='index',
                                        columns=['source', 'target', 'label'])
 
-        right_most_path = ["0", "1", "2"]
+        right_most_path = [0, 1, 2]
         right_most_path_nodes = sorted(compute_right_most_path_nodes(right_most_path, edges))
         print(right_most_path_nodes)
         self.assertEqual(expected, right_most_path_nodes, msg="Test for the matrix")
@@ -33,18 +33,18 @@ class TestRightMostPath(TestCase):
         self.assertEqual(expected_result.values.tolist(), relevant_edges.values.tolist(),
                          msg="Test for the relevant edges of a node")
 
-    def test_generate_new_candidate(self):
-        edges = pd.DataFrame.from_dict({"0": ["0", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
-        nodes = pd.DataFrame.from_dict({"0": ["DB"],
-                                        "1": ["IR"]}, orient='index', columns=['label'])
+    def test_add_new_forward_edge(self):
+        edges = pd.DataFrame.from_dict({0: [0, 1, "b"]}, orient='index', columns=['source', 'target', 'label'])
+        nodes = pd.DataFrame.from_dict({0: ["DB"],
+                                        1: ["IR"]}, orient='index', columns=['label'])
 
         graph = Graph(nodes, edges)
 
-        graph.set_root_node = "0"
+        graph.root_node = 0
 
         new_edge = pd.Series(data=['DB', 'DM', 'a'], index=['source', 'target', 'label'])
 
-        new_graph = generate_new_candidate(graph, new_edge, "0")
+        new_graph = add_new_forward_edge(graph, new_edge, 0)
 
         print(new_graph.edges)
         print(new_graph.nodes)
