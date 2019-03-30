@@ -7,7 +7,7 @@ nodes = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\nodes.csv', sep=';'
 edges = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\edges.csv', sep=';', index_col='id')
 graph = Graph(nodes, edges)
 
-graph.set_root_node = 1
+graph.root_node = 1
 print("########GRAPH_ATTRIBUTES########")
 print("_______Matrix_______\n")
 print(graph.adjacency_matrix)

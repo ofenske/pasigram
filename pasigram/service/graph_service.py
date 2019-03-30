@@ -89,3 +89,11 @@ def build_csp_graph(clusters_by_adjacency_list: pd.DataFrame) -> pd.DataFrame:
     return csp_graph
 
 
+def compute_right_most_path_labels(right_most_path: list, nodes: pd.DataFrame) -> list:
+    right_most_path_labels = []
+
+    for i in range(0, len(right_most_path)):
+        current_node_label = nodes.loc[right_most_path[i]]['label']
+        right_most_path_labels.append(current_node_label)
+
+    return right_most_path_labels

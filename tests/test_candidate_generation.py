@@ -28,10 +28,10 @@ class TestRightMostPath(TestCase):
                                                 columns=['source', 'target', 'label', 'frequency'])
         current_node_label = 'DB'
 
-        relevant_edges = compute_relevant_edges(current_node_label, frequent_edges)
+        relevant_edges = compute_relevant_forward_edges(current_node_label, frequent_edges)
 
         self.assertEqual(expected_result.values.tolist(), relevant_edges.values.tolist(),
-                         msg="Test for the relevant edges of a node")
+                         msg="Test for the relevant forward edges")
 
     def test_add_new_forward_edge(self):
         edges = pd.DataFrame.from_dict({0: [0, 1, "b"]}, orient='index', columns=['source', 'target', 'label'])
@@ -49,3 +49,23 @@ class TestRightMostPath(TestCase):
         print(new_graph.edges)
         print(new_graph.nodes)
         print(new_graph.csp_graph)
+
+    def test_compute_relevant_backward_edges(self):
+        edges = pd.DataFrame.from_dict({0: [0, 1, "a"],
+                                        1: [1, 0, "a"]}, orient='index', columns=['source', 'target', 'label'])
+        nodes = pd.DataFrame.from_dict({0: ["IR"],
+                                        1: ["IR"]}, orient='index', columns=['label'])
+
+        graph = Graph(nodes, edges)
+        graph.root_node = 0
+        graph.right_most_node = 1
+        graph.right_most_path = [0, 1]
+
+        relevant_backward_edges = compute_relevant_backward_edges(graph.right_most_node, graph.right_most_path,
+                                                                  graph.edges).values
+
+        expected = pd.DataFrame.from_dict({2: [1, 0, "a"]}, orient='index',
+                                          columns=['source', 'target', 'label']).values
+
+        self.assertEqual(relevant_backward_edges.tolist(), expected.tolist(),
+                         msg="Test for the relevant backward edges of a node")

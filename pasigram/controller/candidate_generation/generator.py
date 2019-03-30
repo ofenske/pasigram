@@ -82,39 +82,118 @@ class Generator:
         candidates : pd.DataFrame
             Contains all frequent graphs of size n
         """
+        # initialize a DataFrame to save all new candidates
         new_candidates = pd.DataFrame(columns=['graph', 'size'])
-        counter = 0
+
         # iterate over all graphs in candidates
         for i in range(0, len(candidates)):
             # get the Graph object of the current_candidate
             current_candidate = candidates.iloc[i]['graph']
 
-            # get the ids of all nodes on the right_most_path of current_candidate
-            right_most_path_nodes = current_candidate.right_most_path
+            # generate all forward-edge-candidates for current_candidate
+            self.__generate_new_forward_edge_candidates(current_candidate, new_candidates)
 
-            # iterate over all nodes of right_most_path_nodes
-            for j in range(0, len(right_most_path_nodes)):
-                # get the id and label of the current_node
-                current_node_id = right_most_path_nodes[j]
-                current_node_label = current_candidate.nodes.loc[current_node_id]['label']
+            # generate all backward-edge-candidates for current_candidate
+            self.__generate_backward_edge_candidates(current_candidate, new_candidates)
 
-                # get the relevant edges for current_node
-                relevant_edges = compute_relevant_edges(current_node_label, self.frequent_edges)
+            # generate all right-most-node-forward-edge-candidates for current_candidate
+            self.__generate_new_right_most_node_forward_edge_candidates(current_candidate, new_candidates)
 
-                # iterate over all edges of relevant_edges
-                for k in range(0, len(relevant_edges)):
-                    # get the current_relevant_edge (pd.Series)
-                    current_relevant_edge = relevant_edges.iloc[k]
-
-                    # get the Graph object of the new candidate
-                    new_pattern = add_new_forward_edge(current_candidate, current_relevant_edge, current_node_id)
-                    counter += 1
-                    # print("\n Candidate ", counter)
-                    # print("\n", new_pattern.csp_graph)
-                    new_pattern_code = new_pattern.canonical_code
-                    if new_pattern_code not in new_candidates.index:
-                        new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
         return new_candidates
+
+    def __generate_backward_edge_candidates(self, current_candidate: Graph, new_candidates: pd.DataFrame):
+        """Method for generating all possible backward edge candidates out of a given frequent subgraph.
+
+        Parameters
+        ----------
+        current_candidate : Graph
+            The candidate for which we want to add new backward edges
+        new_candidates : pd.DataFrame
+            The DataFrame where we save all candidates of size n
+        """
+        # get the right-most-node-label of current_candidate
+        right_most_node_label = current_candidate.nodes.loc[current_candidate.right_most_node]['label']
+
+        # get labels for all nodes in right-most-path of current_candidate
+        right_most_path_labels = current_candidate.right_most_path_labels
+
+        # get the relevant backward edges for current_candidate
+        relevant_backward_edges = compute_relevant_backward_edges(right_most_node_label,
+                                                                  right_most_path_labels,
+                                                                  self.frequent_edges)
+
+        # iterate over all edges in relevant_backward_edges
+        for j in range(0, len(relevant_backward_edges)):
+            # get the current relevant backward edge
+            current_relevant_backward_edge = relevant_backward_edges.iloc[j]
+
+            # add current_relevant_backward_edge to current_candidate and create a new pattern (Graph object)
+            new_pattern = add_new_backward_edge(current_candidate, current_relevant_backward_edge)
+
+            # get the canonical code of new_pattern
+            new_pattern_code = new_pattern.canonical_code
+
+            # check if new_pattern is already in new_candidates (if new_pattern already exists)
+            if new_pattern_code not in new_candidates.index:
+                new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+
+    def __generate_new_forward_edge_candidates(self, current_candidate: Graph, new_candidates: pd.DataFrame):
+        """Method for generating all possible forward edge candidates out of a given frequent subgraph.
+
+        Parameters
+        ----------
+        current_candidate : Graph
+            The candidate for which we want to add new backward edges
+        new_candidates : pd.DataFrame
+            The DataFrame where we save all candidates of size n
+        """
+        # get the right-most-path for current_candidate
+        right_most_path = current_candidate.right_most_path
+
+        # iterate over all nodes of right_most_path
+        for j in range(0, len(right_most_path)):
+            # get the id and label of the current_node
+            current_node_id = right_most_path[j]
+            current_node_label = current_candidate.nodes.loc[current_node_id]['label']
+
+            # get the relevant forward edges for current_node
+            relevant_foward_edges = compute_relevant_forward_edges(current_node_label, self.frequent_edges)
+
+            # iterate over all edges of relevant_forward_edges
+            for k in range(0, len(relevant_foward_edges)):
+                # get the current_relevant_edge (pd.Series)
+                current_relevant_forward_edge = relevant_foward_edges.iloc[k]
+
+                # get the Graph object of the new candidate
+                new_pattern = add_new_forward_edge(current_candidate, current_relevant_forward_edge, current_node_id)
+
+                # get the canonical_code of new_pattern
+                new_pattern_code = new_pattern.canonical_code
+
+                # check if new_pattern is already in new_candidates (if new_pattern already exists)
+                if new_pattern_code not in new_candidates.index:
+                    new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+
+    def __generate_new_right_most_node_forward_edge_candidates(self, current_candidate: Graph,
+                                                               new_candidates: pd.DataFrame):
+        right_most_node_label = current_candidate.nodes.loc[current_candidate.right_most_node]['label']
+
+        relevant_right_most_node_forward_edges = compute_relevant_right_most_node_forward_edges(right_most_node_label,
+                                                                                                self.frequent_edges)
+
+        for i in range(0, len(relevant_right_most_node_forward_edges)):
+            current_relevant_right_most_node_forward_edge = relevant_right_most_node_forward_edges.iloc[i]
+
+            # add current_relevant_right_most_node_forward_edge to current_candidate and create a new pattern
+            new_pattern = add_new_right_most_node_forward_edge(current_candidate,
+                                                               current_relevant_right_most_node_forward_edge)
+
+            # get the canonical code of new_pattern
+            new_pattern_code = new_pattern.canonical_code
+
+            # check if new_pattern is already in new_candidates (if new_pattern already exists)
+            if new_pattern_code not in new_candidates.index:
+                new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
 
     @property
     def min_support(self) -> int:
@@ -131,4 +210,3 @@ class Generator:
     @property
     def current_max_size(self):
         return self.__current_max_size
-

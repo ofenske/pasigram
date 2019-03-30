@@ -143,6 +143,10 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
     def right_most_path(self) -> list:
         return self.__nodes.right_most_path
 
+    @property
+    def right_most_path_labels(self) -> list:
+        return compute_right_most_path_labels(self.right_most_path, self.nodes)
+
     @right_most_path.setter
     def right_most_path(self, edge_ids: list):
         self.__nodes.right_most_path = edge_ids
