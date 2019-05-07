@@ -1,8 +1,8 @@
 import pandas as pd
-from pasigram.model.graph import *
+from pasigram.model.graph import Graph
 
-nodes = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\nodes.csv', sep=';', index_col='id')
-edges = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\edges.csv', sep=';', index_col='id')
+nodes = pd.read_csv(r'../../../data/nodes.csv', sep=';', index_col='id')
+edges = pd.read_csv(r'../../../data/edges.csv', sep=';', index_col='id')
 graph = Graph(nodes, edges)
 
 graph.root_node = 1

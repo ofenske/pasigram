@@ -1,22 +1,17 @@
 import pandas as pd
-from pasigram.model.graph import *
+import copy
+from pasigram.model.graph import Graph
 
 
 def compute_right_most_path_nodes(right_most_path: list, edges: pd.DataFrame) -> list:
     """Method for computing a list with all nodes which are part of the right-most-path.
 
-    Parameters
-    ----------
-    right_most_path : list
-        A list with the ids of all edges of the right-most-path
-    edges : pd.DataFrame
-        DataFrame with all edges.
-
-    Returns
-    -------
-    list
-        A list with ids of all nodes of the right-most-path.
+    :param list right_most_path: A list with the ids of all edges of the right-most-path
+    :param pd.DataFrame edges: DataFrame with all edges.
+    :return: A list with ids of all nodes of the right-most-path.
+    :rtype: list
     """
+
     right_most_path_nodes = []
 
     # iterating over all edges of the right-most-path
@@ -42,18 +37,12 @@ def compute_right_most_path_nodes(right_most_path: list, edges: pd.DataFrame) ->
 def compute_relevant_forward_edges(node: str, frequent_edges: pd.DataFrame) -> pd.DataFrame:
     """Method to find all edges which contains node as the source
 
-    Parameters
-    ----------
-    node : str
-        The node which should be the source
-    frequent_edges : pd.DataFrame
-        DataFrame of frequent edges which could be relevant for node
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame with all relevant edges for the node.
+    :param str node: The node which should be the source
+    :param pd.DataFrame frequent_edges: DataFrame of frequent edges which could be relevant for node
+    :return: A DataFrame with all relevant edges for the node.
+    :rtype: pd.DataFrame
     """
+
     relevant_forward_edges = frequent_edges[frequent_edges['source'] == node]
     return relevant_forward_edges
 
@@ -62,21 +51,14 @@ def compute_relevant_backward_edges(right_most_node_label: str, right_most_path:
                                     frequent_edges: pd.DataFrame) -> pd.DataFrame:
     """Method to compute all relevant backward edges from the right-most-node to all nodes in the right-most-path.
 
-    Parameters
-    ----------
-    right_most_node_label : str
-        The label of the right-most-node
-    right_most_path : list
-        A list of nodes which are part of the right-most-path
-    frequent_edges : pd.DataFrame
-        DataFrame of all frequent edges
-
-    Returns
-    -------
-    DataFrame
-        Extends all relevant backward edges.
+    :param str right_most_node_label: The label of the right-most-node
+    :param list right_most_path: A list of nodes which are part of the right-most-path
+    :param pd.DataFrame frequent_edges: DataFrame of all frequent edges
+    :return: Extends all relevant backward edges.
         Format : source|target|label|frequency
+    :rtype: pd.DataFrame
     """
+
     # get the columns of frequent_edges
     column_names = list(frequent_edges.columns.values)
 
@@ -88,29 +70,26 @@ def compute_relevant_backward_edges(right_most_node_label: str, right_most_path:
         # get all edges out of frequent_edges which have the right-most-node as source and the current node as target
         # append all result edges to relevant_backward_edges
         relevant_backward_edges = relevant_backward_edges.append(
-            frequent_edges[(frequent_edges['source'] == right_most_node_label) & (
-                    frequent_edges['target'] ==
-                    right_most_path[i])])
+            frequent_edges[(frequent_edges['source'] == right_most_node_label) &
+                           (frequent_edges['target'] == right_most_path[i])])
+
+        relevant_backward_edges = relevant_backward_edges.append(
+            frequent_edges[(frequent_edges['target'] == right_most_node_label) &
+                           (frequent_edges['source'] == right_most_path[i])])
 
     return relevant_backward_edges
 
 
 def compute_relevant_right_most_node_forward_edges(right_most_node_label: str,
                                                    frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    """Method to compute relevant forward edges to use to extend an existing graph at his right-most-node
+
+    :param str right_most_node_label: The label of the right_most_node of the graph
+    :param pd.DataFrame frequent_edges: DataFrame which contains all frequent edges of the input graph
+    :return: All relevant forward edges of the right-most-node
+    :rtype: pd.DataFrame
     """
 
-    Parameters
-    ----------
-    right_most_node_label : str
-        The label of the right_most_node of the graph
-    frequent_edges : pd.DataFrame
-        DataFrame which contains all frequent edges of the input graph
-
-    Returns
-    -------
-    pd.DataFrame
-        All relevant forward edges of the right-most-node
-    """
     relevant_right_most_node_forward_edges = frequent_edges[frequent_edges['target'] == right_most_node_label]
     return relevant_right_most_node_forward_edges
 
@@ -120,20 +99,13 @@ def add_new_forward_edge(candidate: Graph, new_edge: pd.Series, current_node_id:
     which is not already in the existing graph. As a result you get an new graph object with the all edges and nodes of
     the existing graph + the new edge and node.
 
-    Parameters
-    ----------
-    candidate : Graph
-        The existing graph to expand.
-    new_edge : pd.Series
-        The edge we want to add to the existing graph.
-    current_node_id : str
-        The id of the node where we want to add the new edge.
-
-    Returns
-    -------
-    Graph
-        A Graph object of the new generated graph.
+    :param Graph candidate: The existing graph to expand.
+    :param pd.Series new_edge: The edge we want to add to the existing graph.
+    :param int current_node_id: The id of the node where we want to add the new edge.
+    :return: A Graph object of the new generated graph.
+    :rtype: Graph
     """
+
     # get the nodes and edges of the existing subgraph
     candidate_nodes = candidate.nodes.copy()
     candidate_edges = candidate.edges.copy()
@@ -155,86 +127,107 @@ def add_new_forward_edge(candidate: Graph, new_edge: pd.Series, current_node_id:
     new_candidate = Graph(candidate_nodes, candidate_edges)
 
     # set the right_most_node of new_candidate
-    new_candidate.right_most_node = len(candidate.nodes) - 1
+    new_candidate.right_most_node = len(candidate_nodes) - 1
 
     # set the root_node of  new_candidate
     new_candidate.root_node = candidate.root_node
 
     new_candidate.right_most_path = find_right_most_path(new_candidate)
+
+    new_candidate.instances = copy.deepcopy(candidate.instances)
+
+    new_candidate.new_added_edge = {'parent_node_id': current_node_id, 'child_node_id': target_node_id,
+                                    'edge_label': new_edge_label, 'edge_type': 'forward'}
 
     return new_candidate
 
 
 def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
-    """Method to add a new forward edge to an existing graph, which connects a node in the existing graph to an new node
-    which is not already in the existing graph. As a result you get an new graph object with the all edges and nodes of
-    the existing graph + the new edge and node.
+    """Method to add a new backward edge to an existing graph, which connects the right-most-node in the existing graph
+    to an existing node which is part of the right-most-path. As a result you get an new graph object with the all
+    edges and nodes of the existing graph + the new edge.
 
-    Parameters
-    ----------
-    candidate : Graph
-        The existing graph to expand.
-    new_edge : pd.Series
-        The edge we want to add to the existing graph.
-    current_node_id : str
-        The id of the node where we want to add the new edge.
-
-    Returns
-    -------
-    Graph
-        A Graph object of the new generated graph.
+    :param Graph candidate: The existing graph to expand.
+    :param pd.Series new_edge: The edge we want to add to the existing graph.
+    :return: A Graph object of the new generated graph.
+    :rtype: Graph
     """
+
     # get the nodes and edges of the existing subgraph
     candidate_nodes = candidate.nodes.copy()
     candidate_edges = candidate.edges.copy()
 
     right_most_path_nodes = candidate.right_most_path
-    # get label,id of the target node of the new_edge
-    target_node_label = new_edge.loc['target']
+    right_most_node_label = candidate_nodes.loc[candidate.right_most_node]['label']
 
-    for i in range(0, len(right_most_path_nodes) - 1):
-        current_right_most_path_node = candidate_nodes.loc[right_most_path_nodes[i]]
-        label = current_right_most_path_node.loc['label']
+    if right_most_node_label is new_edge.loc['source']:
+        # get label,id of the target node of the new_edge
+        target_node_label = new_edge.loc['target']
 
-        if label == target_node_label:
-            target_node_id = right_most_path_nodes[i]
+        for i in range(0, len(right_most_path_nodes) - 1):
+            current_right_most_path_node = candidate_nodes.loc[right_most_path_nodes[i]]
+            label = current_right_most_path_node.loc['label']
 
-    # get the label of new_edge
-    new_edge_label = new_edge.loc['label']
+            if label == target_node_label:
+                target_node_id = right_most_path_nodes[i]
 
-    # append new_edge to the existing edges
-    candidate_edges.loc[len(candidate_edges)] = [candidate.right_most_node, target_node_id, new_edge_label]
+        # get the label of new_edge
+        new_edge_label = new_edge.loc['label']
+
+        # append new_edge to the existing edges
+        candidate_edges.loc[len(candidate_edges)] = [candidate.right_most_node, target_node_id, new_edge_label]
+
+    elif right_most_node_label is new_edge.loc['target']:
+        # get label,id of the target node of the new_edge
+        source_node_label = new_edge.loc['source']
+
+        for i in range(0, len(right_most_path_nodes) - 1):
+            current_right_most_path_node = candidate_nodes.loc[right_most_path_nodes[i]]
+            label = current_right_most_path_node.loc['label']
+
+            if label == source_node_label:
+                source_node_id = right_most_path_nodes[i]
+
+        # get the label of new_edge
+        new_edge_label = new_edge.loc['label']
+
+        # append new_edge to the existing edges
+        candidate_edges.loc[len(candidate_edges)] = [source_node_id, candidate.right_most_node, new_edge_label]
 
     # initialize the new_candidate as a graph
     new_candidate = Graph(candidate_nodes, candidate_edges)
 
     # set the right_most_node of new_candidate
-    new_candidate.right_most_node = len(candidate.nodes) - 1
+    new_candidate.right_most_node = len(candidate_nodes) - 1
 
     # set the root_node of  new_candidate
     new_candidate.root_node = candidate.root_node
 
     new_candidate.right_most_path = find_right_most_path(new_candidate)
 
+    new_candidate.instances = copy.deepcopy(candidate.instances)
+
+    if right_most_node_label is new_edge.loc['source']:
+        new_candidate.new_added_edge = {'parent_node_id': target_node_id, 'child_node_id': candidate.right_most_node,
+                                        'edge_label': new_edge_label, 'edge_type': 'backward'}
+    else:
+        new_candidate.new_added_edge = {'parent_node_id': source_node_id, 'child_node_id': candidate.right_most_node,
+                                        'edge_label': new_edge_label, 'edge_type': 'backward'}
+
     return new_candidate
 
 
 def add_new_right_most_node_forward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
-    """Method to add a new right-mos-node forward edge to an existing graph, which connects a node in the existing graph
-    to an new node which is not already in the existing graph.
+    """Method to add a new right-most-node forward edge to an existing graph, which connects the right-most-node
+    in the existing graph to an new node which is not already in the existing graph.
     As a result you get an new Graph object with the all edges and nodes of the existing graph + the new edge and node.
 
-    Parameters
-    ----------
-    candidate : Graph
-        The existing graph to expand
-    new_edge : pd.Series
-        The edge we want to add to the existing graph
-
-    Returns
-    -------
-
+    :param Graph candidate: The existing graph to expand
+    :param pd.Series new_edge: The edge we want to add to the existing graph
+    :return: A Graph object of the new generated graph.
+    :rtype: Graph
     """
+
     # get the nodes and edges of the existing subgraph
     candidate_nodes = candidate.nodes.copy()
     candidate_edges = candidate.edges.copy()
@@ -242,7 +235,6 @@ def add_new_right_most_node_forward_edge(candidate: Graph, new_edge: pd.Series) 
     # get label,id of the target node of the new_edge
     new_source_node_label = new_edge.loc['source']
     new_source_node_id = len(candidate_nodes)
-
 
     target_node_id = candidate.right_most_node
 
@@ -259,12 +251,19 @@ def add_new_right_most_node_forward_edge(candidate: Graph, new_edge: pd.Series) 
     new_candidate = Graph(candidate_nodes, candidate_edges)
 
     # set the right_most_node of new_candidate
-    new_candidate.right_most_node = len(candidate.nodes) - 1
+    new_candidate.right_most_node = len(candidate_nodes) - 1
+
+    new_candidate.right_most_node_parent_node = len(candidate_nodes) - 2
 
     # set the root_node of  new_candidate
     new_candidate.root_node = candidate.root_node
 
     new_candidate.right_most_path = find_right_most_path(new_candidate)
+
+    new_candidate.instances = copy.deepcopy(candidate.instances)
+
+    new_candidate.new_added_edge = {'parent_node_id': target_node_id, 'child_node_id': new_source_node_id,
+                                    'edge_label': new_edge_label, 'edge_type': 'forward'}
 
     return new_candidate
 
@@ -272,16 +271,11 @@ def add_new_right_most_node_forward_edge(candidate: Graph, new_edge: pd.Series) 
 def find_right_most_path(graph: Graph) -> list:
     """An implementation of BFS to find the right-most-path.
 
-    Parameters
-    ----------
-    graph : Graph
-        The graph for which to find the shortest path from the root node to the right-most-node
-
-    Returns
-    -------
-    list
-        A list of all nodes in the right-most-path.
+    :param Graph graph: The graph for which to find the shortest path from the root node to the right-most-node
+    :return: A list of all nodes in the right-most-path.
+    :rtype: list
     """
+
     # get the start and the end node for the shortest path
     start_node_id = graph.root_node
     end_node_id = graph.right_most_node

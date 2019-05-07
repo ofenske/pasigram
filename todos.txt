@@ -1,58 +1,17 @@
 Todos PaSiGraM:
-[ ]single execution
-    [x]Datenstruktur: Graph -> graph.py
-        [x]Kanten -> edges.py
-            [x]edge_ids -> edges_service.py
-            [x]edges_with_node_labels -> edges_service.py
-            [x]unique_edges -> edges_service.py
-        [x]Knoten -> nodes.py
-            [x]node_ids -> nodes_service.py
-            [x]node_degrees -> nodes_service.py
-        [x]adjacency_matrix -> adjacency_matrix.py -> adjacency_matrix_service.py
-        [x]adjacency_list -> adjacency_list.py -> adjacency_list_service.py
-        [x]clusters of nodes -> clusters.py
-            [x]clusters_by_label_and_degree -> clusters_service.py
-            [x]clusters_by_adjacency_list -> clusters_service.py
-        [x]canonical_code -> graph_service.py
-    [ ]Kandidatengenerierung -> generator.py
-        [x]data structure to save the current n-edges candidates
-        [x]method for generating initial candidates
-        [ ]method to generate n+1-edges candidates out of n-edges frequent subgraphs
-            [ ]Edge extension approach
-                [x]data structure to save right-most-path, root-node and right-most-node for every graph
-                [x]method for computing all node ids of the right-most-path
-
-        [x]method to evaluate if two n-size-graphs have the same n-1-size-subgraphs (see spyder)
-    [ ]Signifikanzberechnung -> evaluator.py
-        [ ]Teilgraph-Isomorphie
-            [x]CSP data format for the single graphs -> graph.py -> graph_service.py
-            [x]build a method to compute the candidate frequencies -> evaluator.py -> compute_candidate_frequency()
-            [ ]build method to check min_support constraint for the candidates
-    [ ]interface for pasigram
-        [ ]build data structure to save all frequent subgraphs (with extra column for the relative subgraph frequency)
-
-
-[ ]parallel execution
-
-Join-Generierung:
-    Negativ:
-        - join ist teuer
-        - Voraussetzung für Join:
-            - Berechnung ob zwei Graphen die gleiche maximal korrekte Teilmatrix besitzen
-        - Join von zwei Graphen kann in vielen unterschiedlichen Graphen resultieren
-            - hohe Anzahl an möglichen Alternativen sind beim join zu beachten -> hoher Speicheraufwand
-        - schlecht parallelisierbar
-            - welche häufigen Teilgraphen müssen auf welchen DataNode (gleiche maximal korrekte Teilmatrix)
-    Positiv:
-        - leicht zu implementieren
-            - allerdings müssen alle möglichen Fälle die bei einem Join auftreten können ermittelt und abgedeckt werden
-
-Edge-Extension-Generierung:
-    Positiv:
-        - keine teure Operation
-        - mit "right-most-extension" existiert eine gute Heuristik
-        - leicht zu parallelisieren
-    Negativ:
-        - man muss sich für jeden Graphen den "right-most-path" merken
+[x]candidate_generation
+    [x]backward edges in alle Richtungen erlauben
+        [x]utils.py
+            [x]1. compute_relevant_backward_edges() anpassen (siehe Datei)
+            [x]3. add_new_backward_edge() anpassen
+        [x]generator.py:
+            [x]2. __generate_backward_edge_candidates() anpassen
+[ ]csp
+    [ ]parent_node von right_most_node über zuletzt hinzugefügte Kante ermitteln
+        [ ]evaluator.py
+            [ ]1. evaluate_candidates() anpassen
+        [ ]utils.py
+            [ ]2. compute_candidate_frequency_with_given_instances() anpassen
+            [ ]3. compute_candidate_frequency() anpassen
 
 

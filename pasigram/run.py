@@ -1,13 +1,19 @@
-from pasigram.controller.csp.evaluator import *
-from pasigram.controller.candidate_generation.generator import *
-import pasigram.model.graph
 import pandas as pd
+from pasigram.model.graph import Graph
+from pasigram.controller.candidate_generation.generator import Generator
+from pasigram.controller.pasigram import *
 
-nodes = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\nodes.csv', sep=';', index_col='id')
-edges = pd.read_csv(r'C:\Users\OleFe\workspace\pasigram\data\edges.csv', sep=';', index_col='id')
+nodes = pd.read_csv(r'../data/nodes.csv', sep=';', index_col='id')
+edges = pd.read_csv(r'../data/edges.csv', sep=';', index_col='id')
 graph = Graph(nodes, edges)
 
-graph.root_node = 1
+print(graph.csp_graph)
+
+pasigram = Pasigram(graph, 2)
+pasigram.execute()
+#print(len(pasigram.frequent_subgraphs))
+
+"""graph.root_node = 1
 print("########GRAPH_ATTRIBUTES########")
 print("_______Matrix_______\n")
 print(graph.adjacency_matrix)
@@ -39,7 +45,7 @@ initial_patterns = generator.generate_initial_candidates()
 print(type(initial_patterns.iloc[0]['graph'].edges.iloc[0]['target']))
 generator.generate_new_subgraphs(initial_patterns)
 
-"""print("\n_______Candidate#1_______\n")
+print("\n_______Candidate#1_______\n")
 print("_______Matrix_______\n")
 print(generator.candidates.iloc[1]['graph'].adjacency_matrix)
 print("\n_______Nodes_______\n")

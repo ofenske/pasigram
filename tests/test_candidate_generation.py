@@ -1,6 +1,9 @@
 from unittest import TestCase
 import pandas as pd
-from pasigram.controller.candidate_generation.utils import *
+from pasigram.controller.candidate_generation.utils \
+    import compute_right_most_path_nodes, add_new_forward_edge, compute_relevant_forward_edges, \
+    compute_relevant_backward_edges
+from pasigram.model.graph import Graph
 
 
 class TestRightMostPath(TestCase):
@@ -64,8 +67,10 @@ class TestRightMostPath(TestCase):
         relevant_backward_edges = compute_relevant_backward_edges(graph.right_most_node, graph.right_most_path,
                                                                   graph.edges).values
 
-        expected = pd.DataFrame.from_dict({2: [1, 0, "a"]}, orient='index',
+        expected = pd.DataFrame.from_dict({0: [1, 0, "a"],
+                                           1: [0, 1, "a"]}, orient='index',
                                           columns=['source', 'target', 'label']).values
+        print(relevant_backward_edges)
 
         self.assertEqual(relevant_backward_edges.tolist(), expected.tolist(),
                          msg="Test for the relevant backward edges of a node")

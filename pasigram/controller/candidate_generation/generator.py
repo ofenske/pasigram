@@ -1,36 +1,22 @@
 import pandas as pd
-from pasigram.service.edges_service import *
-from pasigram.controller.candidate_generation.utils import *
-from pasigram.model.graph import *
+from pasigram.service.edges_service import compute_frequent_edges
+from pasigram.controller.candidate_generation.utils import add_new_forward_edge, compute_relevant_backward_edges, \
+    add_new_backward_edge, compute_relevant_forward_edges, compute_relevant_right_most_node_forward_edges, \
+    add_new_right_most_node_forward_edge
+from pasigram.model.graph import Graph
 
 
 class Generator:
-    """ A class to represent the candidate_generation component of the PaSiGraM algorithm.
-
-    ...
-
-    Attributes
-    ----------
-    nodes : pd.DataFrame
-        The nodes of the graph (id, label)
-    edges : pd.DataFrame
-        The edges of the graph (id, source, target)
-    min_support: Integer
-        The minimum support the graphs have to meet
-    frequent_edges : pd.DataFrame
-        The frequent edges which were generated based on the min_support and edges of the graph
+    """A class to represent the candidate_generation component of the PaSiGraM algorithm.
     """
 
-    def __init__(self, unique_edges: pd.DataFrame, min_support: int) -> object:
-        """A class to represent the generator component of the PaSiGraM algorithm.
+    def __init__(self, unique_edges: pd.DataFrame, min_support: int) -> None:
+        """Constructor
 
-        Parameters
-        ----------
-        unique_edges : DataFrame
-            All unique edges of the input graph
-        min_support : int
-            The mininum support the candidates have to meet
+        :param pd.DataFrame unique_edges:  All unique edges of the input graph
+        :param int min_support: The mininum support the candidates have to meet
         """
+
         self.__frequent_edges = compute_frequent_edges(unique_edges, min_support)
         self.__min_support = min_support
         self.__candidates = pd.DataFrame(columns=['size', 'graph'])
@@ -39,8 +25,11 @@ class Generator:
     def generate_initial_candidates(self) -> pd.DataFrame:
         """Method for generating the initial candidates for the given input graph
 
+        :return: Initial candidates of size 1
+        :rtype: pd.DataFrame
         """
-        initial_patterns = pd.DataFrame(columns=['size', 'graph'])
+
+        initial_patterns = pd.DataFrame(columns=['graph', 'size', 'frequency'])
 
         # get all frequent edges to initialize graph objects
         join_set = self.frequent_edges
@@ -69,7 +58,8 @@ class Generator:
             current_candidate.right_most_path = [source_node_id, target_node_id]
 
             # add graph object (candidate) to the candidate DataFrame
-            initial_patterns.loc[current_candidate.canonical_code] = [1, current_candidate]
+            current_candidate_frequency = join_set.iloc[i]['frequency']
+            initial_patterns.loc[current_candidate.canonical_code] = [current_candidate, 1, current_candidate_frequency]
         self.__current_max_size += 1
 
         return initial_patterns
@@ -77,11 +67,11 @@ class Generator:
     def generate_new_subgraphs(self, candidates: pd.DataFrame) -> pd.DataFrame:
         """Method for generating new n+1-size graphs out of n-size frequent graphs
 
-        Parameters
-        ----------
-        candidates : pd.DataFrame
-            Contains all frequent graphs of size n
+        :param pd.DataFrame candidates: Contains all frequent graphs of size n
+        :return: All frequent graphs of size n
+        :rtype: pd.DataFrame
         """
+
         # initialize a DataFrame to save all new candidates
         new_candidates = pd.DataFrame(columns=['graph', 'size'])
 
@@ -104,13 +94,10 @@ class Generator:
     def __generate_backward_edge_candidates(self, current_candidate: Graph, new_candidates: pd.DataFrame):
         """Method for generating all possible backward edge candidates out of a given frequent subgraph.
 
-        Parameters
-        ----------
-        current_candidate : Graph
-            The candidate for which we want to add new backward edges
-        new_candidates : pd.DataFrame
-            The DataFrame where we save all candidates of size n
+        :param Graph current_candidate: The candidate for which we want to add new backward edges
+        :param pd.DataFrame new_candidates: The DataFrame where we save all candidates of size n
         """
+
         # get the right-most-node-label of current_candidate
         right_most_node_label = current_candidate.nodes.loc[current_candidate.right_most_node]['label']
 
@@ -135,18 +122,15 @@ class Generator:
 
             # check if new_pattern is already in new_candidates (if new_pattern already exists)
             if new_pattern_code not in new_candidates.index:
-                new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+                new_candidates.loc[new_pattern_code] = [new_pattern, new_pattern.size]
 
     def __generate_new_forward_edge_candidates(self, current_candidate: Graph, new_candidates: pd.DataFrame):
         """Method for generating all possible forward edge candidates out of a given frequent subgraph.
 
-        Parameters
-        ----------
-        current_candidate : Graph
-            The candidate for which we want to add new backward edges
-        new_candidates : pd.DataFrame
-            The DataFrame where we save all candidates of size n
+        :param Graph current_candidate: The candidate for which we want to add new backward edges
+        :param pd.DataFrame new_candidates: The DataFrame where we save all candidates of size n
         """
+
         # get the right-most-path for current_candidate
         right_most_path = current_candidate.right_most_path
 
@@ -172,10 +156,16 @@ class Generator:
 
                 # check if new_pattern is already in new_candidates (if new_pattern already exists)
                 if new_pattern_code not in new_candidates.index:
-                    new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+                    new_candidates.loc[new_pattern_code] = [new_pattern, new_pattern.size]
 
     def __generate_new_right_most_node_forward_edge_candidates(self, current_candidate: Graph,
                                                                new_candidates: pd.DataFrame):
+        """
+
+        :param Graph current_candidate: The current candidate to build new candidates
+        :param pd.DataFrame new_candidates: The set of already newly generated candidates.
+        """
+
         right_most_node_label = current_candidate.nodes.loc[current_candidate.right_most_node]['label']
 
         relevant_right_most_node_forward_edges = compute_relevant_right_most_node_forward_edges(right_most_node_label,
@@ -193,20 +183,44 @@ class Generator:
 
             # check if new_pattern is already in new_candidates (if new_pattern already exists)
             if new_pattern_code not in new_candidates.index:
-                new_candidates.loc[new_pattern_code] = [new_pattern, self.current_max_size]
+                new_candidates.loc[new_pattern_code] = [new_pattern, new_pattern.size]
 
     @property
     def min_support(self) -> int:
+        """The minimum support the candidates have to meet
+
+        :return: The minimum support
+        :rtype: int
+        """
+
         return self.__min_support
 
     @property
     def frequent_edges(self) -> pd.DataFrame:
+        """ The frequent edges to use to build new subgraphs/patterns.
+
+        :return: All frequent edges of the input graph.
+        :rtype: pd.DataFrame
+        """
+
         return self.__frequent_edges
 
     @property
     def candidates(self) -> pd.DataFrame:
+        """The set of candidates which were build by the generator
+
+        :return: All candidates which were build by the generator
+        :rtype: pd.DataFrame
+        """
+
         return self.__candidates
 
     @property
-    def current_max_size(self):
+    def current_max_size(self) -> int:
+        """The current maximum size of the candidates which were build by the generator
+
+        :return: The current maximum size of the candidates
+        :rtype: int
+        """
+
         return self.__current_max_size
