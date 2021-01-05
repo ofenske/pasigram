@@ -1,27 +1,24 @@
 from unittest import TestCase
 import pandas as pd
-from pasigram.controller.csp.utils import compute_candidate_frequency, is_ingoing_subset, has_child, compute_candidate_frequency_with_given_instances
+from pasigram.controller.csp.frequency_calculator import FrequencyCalculator
 from pasigram.model.graph import Graph
 
 
 class TestEvaluator(TestCase):
 
     def test_compute_candidate_frequency(self):
+        """Test to test the correct funtionality of the 'compute_candidate_frequency'-method of the
+        FrequencyCalculator-class.
+
+        :return: True or False
+        :rtype: bool
+        """
+        # build the input graph
         nodes = pd.read_csv(r'../data/nodes.csv', sep=';', index_col='id')
         edges = pd.read_csv(r'../data/edges.csv', sep=';', index_col='id')
         graph = Graph(nodes, edges)
-        graph.right_most_node = 3
-        graph.new_added_edge = {'parent_node_id': 1, 'child_node_id': 2, 'edge_label': 'c'}
 
-
-        input_csp_graph = graph.csp_graph
-
-        """candidate_csp_graph = pd.DataFrame.from_dict({0: ['DB', 0, 2, [], [['b', 'IR', 2], ['a', 'DM', 1]]],
-                                                      1: ['DM', 2, 0, [['a', 'DB', 0]], []],
-                                                      2: ['IR', 1, 1, [['b', 'DB', 0]], []]}, orient='index',
-                                                     columns=['label', 'indegree', 'outdegree', 'ingoing_neighbours',
-                                                              'outgoing_neighbours'])"""
-
+        # build the csp graph of the candidate
         candidate_csp_graph = pd.DataFrame.from_dict({0: ['DB', 0, 2, [], [['a', 'DM', 1], ['b', 'IR', 2]]],
                                                       1: ['DM', 1, 0, [['a', 'DB', 0]], []],
                                                       2: ['IR', 1, 0, [['b', 'DB', 0]], []]
@@ -29,18 +26,39 @@ class TestEvaluator(TestCase):
                                                      columns=['label', 'indegree', 'outdegree', 'ingoing_neighbours',
                                                               'outgoing_neighbours'])
 
-        print(compute_candidate_frequency(input_csp_graph, candidate_csp_graph, graph.right_most_node, graph.new_added_edge))
+        new_added_edge = {'parent_node_id': 0, 'child_node_id': 2, 'edge_label': 'b'}
+        frequency_calculator = FrequencyCalculator(graph.csp_graph, 2)
 
-    def test_is_subset(self):
-        # list1 = [['b', 'IR', 1], ['a', 'DM', 2]]
-        list1 = []
-        list2 = [['a', 'DM', 3], ['b', 'IR', 4]]
+        candidate_frequency = frequency_calculator.compute_candidate_frequency(candidate_csp_graph, 2, new_added_edge)
+        print(candidate_frequency)
+        self.assertEqual(2, candidate_frequency[0], msg="Test of frequency calculation")
 
-        print(is_ingoing_subset(list1, list2))
+    def test_compute_candidate_frequency_with_given_instances(self):
+        """Test to test the correct funtionality of the 'compute_candidate_frequency_with_given_instances'-method of the
+        FrequencyCalculator-class.
 
-    def test_has_child(self):
-        ingoing_neighbour_list = []
-        outgoing_neighbour_list = [['b', 'IR', 2], ['a', 'DM', 1]]
-        child_node_id = 1
+        :return: True or False
+        :rtype: bool
+        """
+        # build the input graph
+        nodes = pd.read_csv(r'../data/nodes.csv', sep=';', index_col='id')
+        edges = pd.read_csv(r'../data/edges.csv', sep=';', index_col='id')
+        graph = Graph(nodes, edges)
 
-        print(has_child(outgoing_neighbour_list, ingoing_neighbour_list, child_node_id))
+        # build the csp graph of the candidate
+        candidate_csp_graph = pd.DataFrame.from_dict({0: ['DB', 0, 2, [], [['a', 'DM', 1], ['b', 'IR', 2]]],
+                                                      1: ['DM', 1, 0, [['a', 'DB', 0]], []],
+                                                      2: ['IR', 1, 0, [['b', 'DB', 0]], []]
+                                                      }, orient='index',
+                                                     columns=['label', 'indegree', 'outdegree', 'ingoing_neighbours',
+                                                              'outgoing_neighbours'])
+
+        new_added_edge = {'parent_node_id': 0, 'child_node_id': 2, 'edge_label': 'b'}
+        candidate_instances = [{2: 0, 3: 1}, {7: 0, 10: 1}]
+        frequency_calculator = FrequencyCalculator(graph.csp_graph, 2)
+
+        candidate_frequency = frequency_calculator.compute_candidate_frequency_with_given_instances(candidate_csp_graph,
+                                                                                                    candidate_instances,
+                                                                                                    2, new_added_edge)
+        print(candidate_frequency)
+        self.assertEqual(2, candidate_frequency[0], msg="Test of frequency calculation with given instances")

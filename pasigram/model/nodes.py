@@ -1,12 +1,12 @@
 import pandas as pd
-from pasigram.service.nodes_service import compute_node_ids, compute_node_degrees
+from pasigram.service.nodes_service import compute_node_ids
 
 
 class Nodes:
     """A class to represent a set of nodes with labels.
     """
 
-    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame) -> None:
+    def __init__(self, nodes: pd.DataFrame) -> None:
         """A class to represent a set of nodes with labels.
 
         :param pd.DataFrame nodes: Contains all nodes of the graph
@@ -15,7 +15,6 @@ class Nodes:
 
         self.__nodes = nodes
         self.__node_ids = compute_node_ids(self.__nodes)
-        self.__node_degrees = compute_node_degrees(self.__node_ids, edges)
         self.__root_node = None
         self.__right_most_node = None
         self.__right_most_path = []
@@ -49,7 +48,7 @@ class Nodes:
         return self.__node_degrees
 
     @property
-    def right_most_node(self) -> str:
+    def right_most_node(self) -> int:
         """The id of the node which is the right-most-node of the graph
 
         :return: right_most_node
@@ -58,7 +57,7 @@ class Nodes:
         return self.__right_most_node
 
     @property
-    def root_node(self) -> str:
+    def root_node(self) -> int:
         """The id of node which is the root node of the graph
 
         :return: root_node
@@ -100,3 +99,7 @@ class Nodes:
     @instances.setter
     def instances(self, instances: list):
         self.__instances = instances
+
+    @nodes.setter
+    def nodes(self, new_nodes: pd.DataFrame) -> None:
+        self.__nodes = new_nodes

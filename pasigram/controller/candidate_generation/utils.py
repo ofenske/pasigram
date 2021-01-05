@@ -1,37 +1,183 @@
 import pandas as pd
 import copy
+import multiprocessing as mp
+import numpy as np
 from pasigram.model.graph import Graph
+from pasigram.controller.candidate_generation.bfs import find_right_most_path
+from functools import partial
+from toolz import curry
+
+########################################################################################################################
+"""This block includes all methods to create the initial patterns (size-1 patterns). It includes two parts:
+1. Method for locally distribute the generation process over multiple cpu cores of a machine.
+2. The logic to generate such initial patterns.
+"""
 
 
-def compute_right_most_path_nodes(right_most_path: list, edges: pd.DataFrame) -> list:
-    """Method for computing a list with all nodes which are part of the right-most-path.
+@curry
+def create_initial_patterns(local_distributed: bool, frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    new_candidates = pd.DataFrame(columns=['graph', 'size', 'frequency'])
+    if local_distributed is True:
+        num_processes = mp.cpu_count()
+        if len(frequent_edges) <= num_processes:
+            if len(frequent_edges) == 0:
+                edges_chunks = np.array_split(frequent_edges, 1)
+            else:
+                edges_chunks = np.array_split(frequent_edges, len(frequent_edges))
+        else:
+            edges_chunks = np.array_split(frequent_edges, num_processes)
 
-    :param list right_most_path: A list with the ids of all edges of the right-most-path
-    :param pd.DataFrame edges: DataFrame with all edges.
-    :return: A list with ids of all nodes of the right-most-path.
+        with mp.Pool(processes=num_processes) as pool:
+            result = pool.map(get_initial_patterns, edges_chunks)
+
+        for patterns in result:
+            new_candidates = new_candidates.append(patterns)
+    else:
+        new_candidates = get_initial_patterns(frequent_edges)
+
+    new_candidates = new_candidates.loc[~new_candidates.index.duplicated(keep='first')]
+
+    return new_candidates
+
+
+def get_initial_patterns(frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    """Method to create the initial patterns
+
+    :param pd.DataFrame frequent_edges:
+    :return:
+    """
+    new_candidates = pd.DataFrame(columns=['graph', 'size', 'frequency'])
+    for i in range(0, len(frequent_edges)):
+        # get id and label of edges and nodes
+        source_node_label = frequent_edges.iloc[i]['source']
+        source_node_id = 0
+        target_node_label = frequent_edges.iloc[i]['target']
+        target_node_id = 1
+        edge_label = frequent_edges.iloc[i]['label']
+
+        # initialize DataFrames for the input nodes and edges
+        nodes = pd.DataFrame(data=[source_node_label, target_node_label], columns=['label'],
+                             index=[source_node_id, target_node_id])
+        edges = pd.DataFrame.from_dict({0: [source_node_id, target_node_id, edge_label]}, orient='index',
+                                       columns=['source', 'target', 'label'])
+
+        # initialize graph object for every candidate
+        current_candidate = Graph(nodes, edges)
+        current_candidate.create_initial_csp_graph()
+        current_candidate.build_canonical_smallest_code()
+
+        # set root node, right most node and right most path for the graph
+        current_candidate.root_node = source_node_id
+        current_candidate.right_most_node = target_node_id
+        current_candidate.right_most_path = [source_node_id, target_node_id]
+
+        # add graph object (candidate) to the candidate DataFrame
+        current_candidate_frequency = frequent_edges.iloc[i]['frequency']
+        new_candidates.at[current_candidate.canonical_code] = [current_candidate, 1, current_candidate_frequency]
+
+    return new_candidates
+
+
+########################################################################################################################
+"""This block includes all methods to generate new candidates. It includes two parts:
+1. Method for locally distribute the generation process over multiple cpu cores of a machine.
+2. The logic to generate the new candidates.
+"""
+
+
+@curry
+def generate_new_subgraphs(frequent_edges: pd.DataFrame, local_distributed: bool,
+                           candidates: pd.DataFrame) -> pd.DataFrame:
+    if local_distributed is True:
+        agents = mp.cpu_count()
+        new_candidates = pd.DataFrame(columns=['graph', 'size'])
+        if len(candidates) <= agents:
+            if len(candidates) == 0:
+                candidates_chunks = np.array_split(candidates, 1)
+            else:
+                candidates_chunks = np.array_split(candidates, len(candidates))
+        else:
+            candidates_chunks = np.array_split(candidates, agents)
+
+        with mp.Pool(processes=agents) as pool:
+            result = pool.map(partial(generate_new_subgraph, frequent_edges=frequent_edges), candidates_chunks)
+
+        for candidates in result:
+            for i in range(len(candidates)):
+                if candidates.iloc[i].name in list(new_candidates.index):
+                    continue
+                new_candidates = new_candidates.append(candidates.iloc[i])
+    else:
+        new_candidates = generate_new_subgraph(candidates, frequent_edges)
+
+    # eliminate duplicated candidates
+    new_candidates = new_candidates.loc[~new_candidates.index.duplicated(keep='first')]
+
+    return new_candidates
+
+
+def generate_new_subgraph(candidates: pd.DataFrame, frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    """Method to generate new subgraphs out of a given graph.
+
+    :param candidates: The frequent subgraphs we want to expand
+    :param frequent_edges: The set of all frequent edges of the input graph
+    :return: List of the newly generated candidates
     :rtype: list
     """
+    new_candidates = pd.DataFrame(columns=['graph', 'size'])
+    for i in range(0, len(candidates)):
+        current_candidate = candidates.iloc[i]['graph']
 
-    right_most_path_nodes = []
+        # generate all forward-edge-candidates for current_candidate
+        new_candidates = new_candidates.append(generate_new_forward_edge_candidates(current_candidate, frequent_edges))
 
-    # iterating over all edges of the right-most-path
-    for i in range(0, len(right_most_path)):
+        # generate all backward-edge-candidates for current_candidates
+        new_candidates = new_candidates.append(generate_backward_edge_candidates(current_candidate, frequent_edges))
 
-        # get current edge id
-        current_edge_id = right_most_path[i]
+    return new_candidates
 
-        # get source and target node ids
-        source_node = edges.loc[current_edge_id]['source']
-        target_node = edges.loc[current_edge_id]['target']
 
-        # check if source or target node are already in the result list
-        # todo: use map()-method instead of "not in" to check the above constraints -> better performance
-        if source_node not in right_most_path_nodes:
-            right_most_path_nodes.append(source_node)
-        if target_node not in right_most_path_nodes:
-            right_most_path_nodes.append(target_node)
+########################################################################################################################
+"""This block includes all methods to create new candidates by the forward edge extension step, which is a part of
+the right most extension approach to generate new candidates. It includes methods to compute all relevant edges 
+and generate all possible candidates.
+"""
 
-    return right_most_path_nodes
+
+def generate_new_forward_edge_candidates(current_candidate: Graph, frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    """Method for generating all possible forward edge candidates out of a given frequent subgraph.
+
+    :param Graph current_candidate: The candidate for which we want to add new backward edges
+    :param pd.DataFrame frequent_edges: The set of all frequent edges of the input graph
+    :return: A graph object of the newly generated candidate
+    :rtype: Graph
+    """
+
+    forward_edge_candidates = pd.DataFrame(columns=['graph', 'size'])
+
+    # get the right-most-path for current_candidate
+    right_most_path = current_candidate.right_most_path
+
+    # iterate over all nodes of right_most_path
+    for j in range(0, len(right_most_path)):
+        # get the id and label of the current_node
+        current_node_id = right_most_path[j]
+        current_node_label = current_candidate.nodes.loc[current_node_id]['label']
+
+        # get the relevant forward edges for current_node
+        relevant_foward_edges = compute_relevant_forward_edges(current_node_label, frequent_edges)
+
+        # iterate over all edges of relevant_forward_edges
+        for k in range(len(relevant_foward_edges)):
+            # get the current_relevant_edge (pd.Series)
+            current_relevant_forward_edge = relevant_foward_edges.iloc[k]
+
+            # get the Graph object of the new candidate
+            new_pattern = add_new_forward_edge(current_candidate, current_relevant_forward_edge, current_node_id)
+
+            forward_edge_candidates.at[new_pattern.canonical_code] = [new_pattern, new_pattern.size]
+
+    return forward_edge_candidates
 
 
 def compute_relevant_forward_edges(node: str, frequent_edges: pd.DataFrame) -> pd.DataFrame:
@@ -43,8 +189,123 @@ def compute_relevant_forward_edges(node: str, frequent_edges: pd.DataFrame) -> p
     :rtype: pd.DataFrame
     """
 
-    relevant_forward_edges = frequent_edges[frequent_edges['source'] == node]
+    relevant_forward_edges = frequent_edges[(frequent_edges['source'] == node) | (frequent_edges['target'] == node)]
     return relevant_forward_edges
+
+
+def add_new_forward_edge(candidate: Graph, new_edge: pd.Series, current_node_id: int) -> Graph:
+    """Method to add a new forward edge to an existing graph, which connects a node in the existing graph to an new node
+    which is not already in the existing graph. As a result you get an new graph object with the all edges and nodes of
+    the existing graph + the new edge and node.
+
+    :param Graph candidate: The existing graph to expand.
+    :param pd.Series new_edge: The edge we want to add to the existing graph.
+    :param int current_node_id: The id of the node where we want to add the new edge.
+    :return: A Graph object of the new generated graph.
+    :rtype: Graph
+    """
+
+    # get the nodes and edges of the existing subgraph
+    candidate_nodes = candidate.nodes.copy()
+    candidate_edges = candidate.edges.copy()
+    candidate_csp_graph: pd.DataFrame = candidate.csp_graph.copy()
+
+    current_node_label = candidate_nodes.loc[current_node_id]['label']
+
+    if current_node_label == new_edge.at['source']:
+
+        # get label,id of the target node of the new_edge
+        target_node_label = new_edge.at['target']
+        target_node_id = len(candidate_nodes)
+
+        source_node_id = current_node_id
+
+        # append the new node (target_node) to the existing nodes
+        candidate_nodes.at[target_node_id] = [target_node_label]
+
+    else:
+        # get label,id of the target node of the new_edge
+        target_node_id = current_node_id
+
+        source_node_id = len(candidate_nodes)
+        source_node_label = new_edge.at['source']
+
+        # append the new node (target_node) to the existing nodes
+        candidate_nodes.at[source_node_id] = [source_node_label]
+
+    # get the label of new_edge
+    new_edge_label = new_edge.at['label']
+
+    # append new_edge to the existing edges
+    candidate_edges.at[len(candidate_edges)] = [source_node_id, target_node_id, new_edge_label]
+
+    # initialize the new_candidate as a graph
+    new_candidate = Graph(candidate_nodes, candidate_edges, candidate_csp_graph)
+
+    # set the right_most_node of new_candidate
+    new_candidate.right_most_node = len(candidate_nodes) - 1
+
+    # set the root_node of  new_candidate
+    new_candidate.root_node = candidate.root_node
+
+    # set the right most path for the new candidate
+    new_candidate.right_most_path = find_right_most_path(new_candidate)
+
+    # copy the valid instances of the parent subgraph
+    new_candidate.instances = copy.deepcopy(candidate.instances)
+
+    # set the new added edge for the new candidate
+    new_candidate.new_added_edge = {'parent_node_id': source_node_id, 'child_node_id': target_node_id,
+                                    'edge_label': new_edge_label, 'edge_type': 'forward'}
+
+    # extend the csp graph by the new edge (and perhaps new node)
+    new_candidate.extend_csp_graph()
+
+    # build the new canonical code for the candidate
+    new_candidate.build_canonical_smallest_code()
+
+    return new_candidate
+
+
+########################################################################################################################
+"""This block includes all methods to create new candidates by the backward edge extension step, which is a part of
+the right most extension approach to generate new candidates. It includes methods to compute all relevant edges 
+and generate all possible candidates.
+"""
+
+
+def generate_backward_edge_candidates(current_candidate: Graph, frequent_edges: pd.DataFrame) -> pd.DataFrame:
+    """Method for generating all possible backward edge candidates out of a given frequent subgraph.
+
+    :param Graph current_candidate: The candidate for which we want to add new backward edges
+    :param pd.DataFrame frequent_edges: The set of all frequent edges of the input graph
+    :return: A graph object of the newly generated candidate
+    :rtype: Graph
+    """
+
+    backward_edge_candidates = pd.DataFrame(columns=['graph', 'size'])
+
+    # get the right-most-node-label of current_candidate
+    right_most_node_label = current_candidate.nodes.loc[current_candidate.right_most_node]['label']
+
+    # get labels for all nodes in right-most-path of current_candidate
+    right_most_path_labels = current_candidate.right_most_path_labels
+
+    # get the relevant backward edges for current_candidate
+    relevant_backward_edges = compute_relevant_backward_edges(right_most_node_label,
+                                                              right_most_path_labels,
+                                                              frequent_edges)
+
+    # iterate over all edges in relevant_backward_edges
+    for j in range(0, len(relevant_backward_edges)):
+        # get the current relevant backward edge
+        current_relevant_backward_edge = relevant_backward_edges.iloc[j]
+        # add current_relevant_backward_edge to current_candidate and create a new pattern (Graph object)
+        new_pattern = add_new_backward_edge(current_candidate, current_relevant_backward_edge)
+
+        backward_edge_candidates.at[new_pattern.canonical_code] = [new_pattern, new_pattern.size]
+
+    return backward_edge_candidates
 
 
 def compute_relevant_backward_edges(right_most_node_label: str, right_most_path: list,
@@ -80,68 +341,6 @@ def compute_relevant_backward_edges(right_most_node_label: str, right_most_path:
     return relevant_backward_edges
 
 
-def compute_relevant_right_most_node_forward_edges(right_most_node_label: str,
-                                                   frequent_edges: pd.DataFrame) -> pd.DataFrame:
-    """Method to compute relevant forward edges to use to extend an existing graph at his right-most-node
-
-    :param str right_most_node_label: The label of the right_most_node of the graph
-    :param pd.DataFrame frequent_edges: DataFrame which contains all frequent edges of the input graph
-    :return: All relevant forward edges of the right-most-node
-    :rtype: pd.DataFrame
-    """
-
-    relevant_right_most_node_forward_edges = frequent_edges[frequent_edges['target'] == right_most_node_label]
-    return relevant_right_most_node_forward_edges
-
-
-def add_new_forward_edge(candidate: Graph, new_edge: pd.Series, current_node_id: int) -> Graph:
-    """Method to add a new forward edge to an existing graph, which connects a node in the existing graph to an new node
-    which is not already in the existing graph. As a result you get an new graph object with the all edges and nodes of
-    the existing graph + the new edge and node.
-
-    :param Graph candidate: The existing graph to expand.
-    :param pd.Series new_edge: The edge we want to add to the existing graph.
-    :param int current_node_id: The id of the node where we want to add the new edge.
-    :return: A Graph object of the new generated graph.
-    :rtype: Graph
-    """
-
-    # get the nodes and edges of the existing subgraph
-    candidate_nodes = candidate.nodes.copy()
-    candidate_edges = candidate.edges.copy()
-
-    # get label,id of the target node of the new_edge
-    target_node_label = new_edge.loc['target']
-    target_node_id = len(candidate_nodes)
-
-    # append the new node (target_node) to the existing nodes
-    candidate_nodes.loc[target_node_id] = [target_node_label]
-
-    # get the label of new_edge
-    new_edge_label = new_edge.loc['label']
-
-    # append new_edge to the existing edges
-    candidate_edges.loc[len(candidate_edges)] = [current_node_id, target_node_id, new_edge_label]
-
-    # initialize the new_candidate as a graph
-    new_candidate = Graph(candidate_nodes, candidate_edges)
-
-    # set the right_most_node of new_candidate
-    new_candidate.right_most_node = len(candidate_nodes) - 1
-
-    # set the root_node of  new_candidate
-    new_candidate.root_node = candidate.root_node
-
-    new_candidate.right_most_path = find_right_most_path(new_candidate)
-
-    new_candidate.instances = copy.deepcopy(candidate.instances)
-
-    new_candidate.new_added_edge = {'parent_node_id': current_node_id, 'child_node_id': target_node_id,
-                                    'edge_label': new_edge_label, 'edge_type': 'forward'}
-
-    return new_candidate
-
-
 def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
     """Method to add a new backward edge to an existing graph, which connects the right-most-node in the existing graph
     to an existing node which is part of the right-most-path. As a result you get an new graph object with the all
@@ -156,12 +355,13 @@ def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
     # get the nodes and edges of the existing subgraph
     candidate_nodes = candidate.nodes.copy()
     candidate_edges = candidate.edges.copy()
+    candidate_csp_graph: pd.DataFrame = candidate.csp_graph.copy()
 
     right_most_path_nodes = candidate.right_most_path
     right_most_node_label = candidate_nodes.loc[candidate.right_most_node]['label']
 
-    if right_most_node_label is new_edge.loc['source']:
-        # get label,id of the target node of the new_edge
+    if right_most_node_label == new_edge.at['source']:
+        # get label, id of the target node of the new_edge
         target_node_label = new_edge.loc['target']
 
         for i in range(0, len(right_most_path_nodes) - 1):
@@ -175,9 +375,9 @@ def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
         new_edge_label = new_edge.loc['label']
 
         # append new_edge to the existing edges
-        candidate_edges.loc[len(candidate_edges)] = [candidate.right_most_node, target_node_id, new_edge_label]
+        candidate_edges.at[len(candidate_edges)] = [candidate.right_most_node, target_node_id, new_edge_label]
 
-    elif right_most_node_label is new_edge.loc['target']:
+    elif right_most_node_label == new_edge.at['target']:
         # get label,id of the target node of the new_edge
         source_node_label = new_edge.loc['source']
 
@@ -192,10 +392,10 @@ def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
         new_edge_label = new_edge.loc['label']
 
         # append new_edge to the existing edges
-        candidate_edges.loc[len(candidate_edges)] = [source_node_id, candidate.right_most_node, new_edge_label]
+        candidate_edges.at[len(candidate_edges)] = [source_node_id, candidate.right_most_node, new_edge_label]
 
     # initialize the new_candidate as a graph
-    new_candidate = Graph(candidate_nodes, candidate_edges)
+    new_candidate = Graph(candidate_nodes, candidate_edges, candidate_csp_graph)
 
     # set the right_most_node of new_candidate
     new_candidate.right_most_node = len(candidate_nodes) - 1
@@ -203,162 +403,58 @@ def add_new_backward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
     # set the root_node of  new_candidate
     new_candidate.root_node = candidate.root_node
 
+    # set the right most path for the new candidate
     new_candidate.right_most_path = find_right_most_path(new_candidate)
 
+    # copy the valid instances of the parent subgraph
     new_candidate.instances = copy.deepcopy(candidate.instances)
 
-    if right_most_node_label is new_edge.loc['source']:
-        new_candidate.new_added_edge = {'parent_node_id': target_node_id, 'child_node_id': candidate.right_most_node,
-                                        'edge_label': new_edge_label, 'edge_type': 'backward'}
-    else:
-        new_candidate.new_added_edge = {'parent_node_id': source_node_id, 'child_node_id': candidate.right_most_node,
-                                        'edge_label': new_edge_label, 'edge_type': 'backward'}
+    # set the new added edge for the new candidate
+    new_candidate.new_added_edge = {'parent_node_id': candidate_edges.loc[len(candidate_edges) - 1].source,
+                                    'child_node_id': candidate_edges.loc[len(candidate_edges) - 1].target,
+                                    'edge_label': new_edge_label, 'edge_type': 'backward'}
+
+    # extend the csp graph by the new edge (and perhaps new node)
+    new_candidate.extend_csp_graph()
+
+    # build the new canonical code for the candidate
+    new_candidate.build_canonical_smallest_code()
 
     return new_candidate
 
 
-def add_new_right_most_node_forward_edge(candidate: Graph, new_edge: pd.Series) -> Graph:
-    """Method to add a new right-most-node forward edge to an existing graph, which connects the right-most-node
-    in the existing graph to an new node which is not already in the existing graph.
-    As a result you get an new Graph object with the all edges and nodes of the existing graph + the new edge and node.
-
-    :param Graph candidate: The existing graph to expand
-    :param pd.Series new_edge: The edge we want to add to the existing graph
-    :return: A Graph object of the new generated graph.
-    :rtype: Graph
-    """
-
-    # get the nodes and edges of the existing subgraph
-    candidate_nodes = candidate.nodes.copy()
-    candidate_edges = candidate.edges.copy()
-
-    # get label,id of the target node of the new_edge
-    new_source_node_label = new_edge.loc['source']
-    new_source_node_id = len(candidate_nodes)
-
-    target_node_id = candidate.right_most_node
-
-    # append the new node (new_source_node) to the existing nodes
-    candidate_nodes.loc[new_source_node_id] = [new_source_node_label]
-
-    # get the label of new_edge
-    new_edge_label = new_edge.loc['label']
-
-    # append new_edge to the existing edges
-    candidate_edges.loc[len(candidate_edges)] = [new_source_node_id, target_node_id, new_edge_label]
-
-    # initialize the new_candidate as a graph
-    new_candidate = Graph(candidate_nodes, candidate_edges)
-
-    # set the right_most_node of new_candidate
-    new_candidate.right_most_node = len(candidate_nodes) - 1
-
-    new_candidate.right_most_node_parent_node = len(candidate_nodes) - 2
-
-    # set the root_node of  new_candidate
-    new_candidate.root_node = candidate.root_node
-
-    new_candidate.right_most_path = find_right_most_path(new_candidate)
-
-    new_candidate.instances = copy.deepcopy(candidate.instances)
-
-    new_candidate.new_added_edge = {'parent_node_id': target_node_id, 'child_node_id': new_source_node_id,
-                                    'edge_label': new_edge_label, 'edge_type': 'forward'}
-
-    return new_candidate
+########################################################################################################################
+"""This block includes the method to compute the nodes of the right most path in a given graph.
+"""
 
 
-def find_right_most_path(graph: Graph) -> list:
-    """An implementation of BFS to find the right-most-path.
+def compute_right_most_path_nodes(right_most_path: list, edges: pd.DataFrame) -> list:
+    """Method for computing a list with all nodes which are part of the right-most-path.
 
-    :param Graph graph: The graph for which to find the shortest path from the root node to the right-most-node
-    :return: A list of all nodes in the right-most-path.
+    :param list right_most_path: A list with the ids of all edges of the right-most-path
+    :param pd.DataFrame edges: DataFrame with all edges.
+    :return: A list with ids of all nodes of the right-most-path.
     :rtype: list
     """
 
-    # get the start and the end node for the shortest path
-    start_node_id = graph.root_node
-    end_node_id = graph.right_most_node
+    right_most_path_nodes = []
 
-    # initialize DataFrame where all nodes an their parents are saved
-    node_set = pd.DataFrame(columns=["parent"])
+    # iterating over all edges of the right-most-path
+    for i in range(0, len(right_most_path)):
 
-    # queue for all nodes for which we have to find the child nodes
-    queue = [end_node_id]
+        # get current edge id
+        current_edge_id = right_most_path[i]
 
-    # list of all visited nodes
-    visited_nodes = [end_node_id]
+        # get source and target node ids
+        source_node = edges.loc[current_edge_id]['source']
+        target_node = edges.loc[current_edge_id]['target']
 
-    # bool if we reach the start_node
-    found = False
+        # check if source or target node are already in the result list
+        if source_node not in right_most_path_nodes:
+            right_most_path_nodes.append(source_node)
+        if target_node not in right_most_path_nodes:
+            right_most_path_nodes.append(target_node)
 
-    # list for all nodes in the right-most-path
-    right_most_path = []
+    return right_most_path_nodes
 
-    # search for next nodes until found == True
-    # we start the search from the end_node
-    while not found:
-        # get the first element out of the queue
-        current_node_id = queue.pop(0)
-
-        # exceptional case for the end_node
-        if current_node_id == end_node_id:
-            node_set.loc[current_node_id] = None
-
-        # get all edges that are containing current_node
-        edge_list = graph.edges[(graph.edges['source'] == current_node_id) | (graph.edges['target'] == current_node_id)]
-
-        # iterate over all edges to get the "child nodes" of current_node
-        for i in range(0, len(edge_list)):
-            # get the potential child node out of source of current edge
-            potential_child_node = edge_list.iloc[i]['source']
-
-            # proof if potential_child_node is the same as current_node or if it is already in visited_nodes
-            if potential_child_node != current_node_id and potential_child_node not in visited_nodes:
-                # save potential_child_node in the nodes DataFrame
-                node_set.loc[potential_child_node] = current_node_id
-
-                # append potential_child_node to queue and visited_nodes
-                queue.append(potential_child_node)
-                visited_nodes.append(potential_child_node)
-
-                # proof if potential_child_node is the same as start_node -> then we found the shortest path
-                if potential_child_node == start_node_id:
-                    found = True
-                    # get out of for-loop
-                    break
-
-                # get into next iteration of for-loop
-                continue
-
-            # get the potential child node out of target of current edge
-            potential_child_node = edge_list.iloc[i]['target']
-
-            # proof if potential_child_node is the same as current_node or if it is already in visited_nodes
-            if potential_child_node != current_node_id and potential_child_node not in visited_nodes:
-                # save potential_child_node in the nodes DataFrame
-                node_set.loc[potential_child_node] = current_node_id
-
-                # append potential_child_node to queue and visited_nodes
-                queue.append(potential_child_node)
-                visited_nodes.append(potential_child_node)
-
-                # proof if potential_child_node is the same as start_node -> then we found the shortest path
-                if potential_child_node == start_node_id:
-                    found = True
-                    # get out of for-loop
-                    break
-
-                # get into next iteration of for-loop
-                continue
-
-    # backtrack in the nodes DataFrame to add all nodes to right_most_path with
-    # root_node is the first and right_most_node the last node in the right-most-path
-    current_node = start_node_id
-    while current_node != end_node_id:
-        right_most_path.append(current_node)
-        current_node = node_set.loc[current_node]['parent']
-
-    right_most_path.append(current_node)
-
-    return right_most_path
+########################################################################################################################

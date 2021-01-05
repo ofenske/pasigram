@@ -1,7 +1,9 @@
 import pandas as pd
-from pasigram.controller.csp.evaluator import Evaluator
 from pasigram.controller.candidate_generation.generator import Generator
+from pasigram.controller.csp.evaluator import Evaluator
 from pasigram.model.graph import Graph
+from pasigram.service.edges_service import compute_frequent_edges, get_frequent_edges
+from pyspark import SparkContext
 
 
 class Pasigram:
@@ -20,19 +22,35 @@ class Pasigram:
         self.__frequent_subgraphs = pd.DataFrame(columns=['graph', 'size', 'frequency'])
         self.__current_max_size = 0
 
-    def execute(self):
+    def execute(self, sc: SparkContext = None, num_workers: int = None, local_distributed: bool = False) -> None:
         """Method to execute the PaSiGraM algorithm
 
         :return:
         """
+
+        # if cluster is involved, broadcast the input edges and the csp graph over all workers
+        if sc is not None:
+            print('Broadcasting inout graph to all workers!')
+            input_csp_graph = sc.broadcast(self.__input_graph.csp_graph)
+            input_graph_edges = sc.broadcast(self.__input_graph.edges)
+            print('Broadcasting done!')
+        else:
+            input_csp_graph = self.__input_graph.csp_graph
+            input_graph_edges = self.__input_graph.edges
+
+        print('Compute frequent edges!')
+        frequent_edges = get_frequent_edges(self.__input_graph.edges, self.__input_graph.nodes, self.min_support)
+
         # intialize the generator, which generates the new candidates
-        generator = Generator(self.input_graph.unique_edges, self.min_support)
+        generator = Generator(frequent_edges)
 
         # initialize the evaluator, which evaluates if the candidates are above the predefined min_support
-        evaluator = Evaluator(self.input_graph.csp_graph, self.min_support)
+        evaluator = Evaluator(self.min_support)
 
         # generate the initial size 1 candidates
-        initial_candidates = generator.generate_initial_candidates()
+        print('Generate initial candidates:')
+        initial_candidates = generator.generate_initial_candidates(sc, num_workers, local_distributed)
+        print('\t '+str(len(initial_candidates))+' initial candidates were found!')
 
         # append initial_candidates to frequent_subgraphs
         self.__frequent_subgraphs = self.__frequent_subgraphs.append(initial_candidates)
@@ -44,28 +62,33 @@ class Pasigram:
         # execute while-loop until no more frequent candidates can't be found
         while new_candidates_found:
 
+            print('Size '+str(self.__current_max_size + 1)+' patterns:')
             # set new_candidates_found boolean to False
             new_candidates_found = False
 
             # generate the next n+1-size candidates
+            print('\t Generate patterns:')
             new_subgraphs = generator.generate_new_subgraphs(
-                self.frequent_subgraphs[self.frequent_subgraphs['size'] == self.__current_max_size])
+                self.frequent_subgraphs[self.frequent_subgraphs['size'] == self.__current_max_size], sc, num_workers,
+                local_distributed)
+            print('\t\t ' + str(len(new_subgraphs)) + ' new patterns were found!')
 
             # evaluate which of the newly generated candidates are frequent/above the predefined min_support
-            new_frequent_subgraphs = evaluator.evaluate_candidates(new_subgraphs)
+            print('\t Compute frequent candidates:')
+            new_frequent_subgraphs = evaluator.evaluate_candidates(new_subgraphs, sc, num_workers, local_distributed,
+                                                                   input_csp_graph, input_graph_edges)
+            print('\t\t '+str(len(new_frequent_subgraphs))+' frequent subgraphs were found!')
 
             # if there are some new frequent subgraphs, execute if statements
             if len(new_frequent_subgraphs) > 0:
-
                 # append the new frequent subgraphs to frequent_subgraphs
                 self.__frequent_subgraphs = self.__frequent_subgraphs.append(new_frequent_subgraphs)
 
-                # # set new_candidates_found boolean to True, to stay inside while-loop
+                # set new_candidates_found boolean to True, to stay inside while-loop
                 new_candidates_found = True
 
                 # increase current_max_size with 1
                 self.__current_max_size += 1
-                print(self.__current_max_size)
 
         print('Finished')
 

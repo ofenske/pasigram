@@ -1,61 +1,80 @@
 import pandas as pd
 from pasigram.model.edges import Edges
 from pasigram.model.nodes import Nodes
-from pasigram.model.adjacency_list import AdjacencyList
-from pasigram.model.adjacency_matrix import AdjacencyMatrix
-from pasigram.model.clusters import Clusters
 from pasigram.service.graph_service import build_canonical_smallest_code, build_csp_graph, \
-    compute_right_most_path_labels
+    compute_right_most_path_labels, extend_csp_graph, dictionary_compression, create_initial_csp_graph
 
 
-class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
+class Graph:
     """A class to represent a directed graph with labels for the edges and nodes.
     """
 
-    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame) -> None:
+    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame, csp_graph: pd.DataFrame = None) -> None:
         """Constructor
 
         :param pd.DataFrame nodes: Contains all nodes of the graph. Should be in the following format: id|label
         :param pd.DataFrame edges: Contains all edges of the graph. Should be in the following format: id|source|target|label
+        :param pd.DataFrame csp_graph: The csp graph for the graph (optionally)
         """
 
         # edges of the graph (pd.DataFrame)
-        self.__edges = Edges(edges)
+        self.__edges: Edges = Edges(edges)
 
         # nodes of the graph (pd.DataFrame)
-        self.__nodes = Nodes(nodes, self.edges)
-
-        # generate edges with node labels and all unique edges for the graph
-        self.__edges.generate_edges_with_node_labels(self.nodes)
-        self.__edges.generate_unique_edges()
-
-        # adjacency matrix of the graph (pd.DataFrame)
-        self.__adjacency_matrix = AdjacencyMatrix(self.nodes_ids, self.edges_ids, self.edges)
-
-        # adjacency list of the graph (pd.DataFrame)
-        self.__adjacency_list = AdjacencyList(self.nodes_ids, self.edges, self.nodes,
-                                              self.node_degrees)
-
-        # initial clusters: nodes clustered by label and degrees (pd.DataFrame)
-        self.__clusters = Clusters(self.nodes, self.node_degrees, self.adjacency_list)
-
-        # canonical code of the graph build based on the final clusters
-        self.__canonical_code = build_canonical_smallest_code(self.clusters_by_adjacency_list)
+        self.__nodes: Nodes = Nodes(nodes)
 
         # the data structure needed to solve the csp problem
-        self.__csp_graph = build_csp_graph(self.nodes, self.nodes_ids, self.node_degrees, self.adjacency_list)
+        self.__csp_graph: pd.DataFrame = csp_graph
 
-    @property
-    def adjacency_matrix(self) -> pd.DataFrame:
-        """Adjacency matrix of the graph (ids of nodes and edges)
+        # canonical code of the graph build based on the final clusters
+        self.__canonical_code: str = None
 
-        :return: adjacency_matrix
-        :rtype: pd.DataFrame
+        # the dictionary of nodes used for compression
+        self.__node_dict = {}
+
+        # the dictionary of edges used for compression
+        self.__edge_dict = {}
+
+    def build_csp_graph(self) -> None:
+        """Method to build the csp graph
+
         """
-        return self.__adjacency_matrix.adjacency_matrix
+        self.__csp_graph = build_csp_graph(self.nodes, self.edges)
+
+    def create_initial_csp_graph(self) -> None:
+        self.__csp_graph = create_initial_csp_graph(self.nodes_ids, self.nodes, self.edges)
+
+    def extend_csp_graph(self) -> None:
+        """Method to extend an existing csp graph, with one edge (and the corresponding nodes).
+        Mainly used to extend an existing frequent subgraph to generate new candidates.
+
+        """
+        self.__csp_graph = extend_csp_graph(self.csp_graph, self.new_added_edge, self.nodes)
+
+    def build_canonical_smallest_code(self) -> None:
+        """Method to build the canonical code based on the csp graph.
+
+        """
+        self.__canonical_code = build_canonical_smallest_code(self.csp_graph)
+
+    def build_compressed_graph(self) -> None:
+        """Method to do dictionary compression for the graph. Nodes and edges set will be compressed (labels will be
+        replaced by numbers).
+
+        """
+        compressed_result = dictionary_compression(self.nodes, self.edges)
+
+        self.__node_dict = compressed_result[0]
+        self.__edge_dict = compressed_result[1]
+        self.__nodes.nodes = compressed_result[2]
+        self.__edges.edges = compressed_result[3]
 
     @property
     def size(self) -> int:
+        """The size of the graph (number of edges)
+
+        :return:
+        """
         return len(self.edges)
 
     @property
@@ -86,10 +105,6 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         return self.__edges.edges
 
     @property
-    def unique_edges(self):
-        return self.__edges.unique_edges
-
-    @property
     def edges_ids(self) -> list:
         """List of all ids of the edges
 
@@ -97,51 +112,6 @@ class Graph(Edges, Nodes, AdjacencyList, AdjacencyMatrix, Clusters):
         :rtype: list
         """
         return self.__edges.edges_ids
-
-    @property
-    def edges_with_node_labels(self) -> pd.DataFrame:
-        """All edges of the graph with labels for the source and target node
-
-        :return: edges_with_node_labels
-        :rtype: pd.DataFrame
-        """
-        return self.__edges.edges_with_node_labels
-
-    @property
-    def adjacency_list(self) -> pd.DataFrame:
-        """Adjacency list of the graph
-
-        :return: adjacency_list
-        :rtype: pd.DataFrame
-        """
-        return self.__adjacency_list.adjacency_list
-
-    @property
-    def node_degrees(self) -> pd.DataFrame:
-        """Degrees of all nodes
-
-        :return: node_degrees
-        :rtype: pd.DataFrame
-        """
-        return self.__nodes.node_degrees
-
-    @property
-    def clusters_by_label_and_degree(self) -> pd.DataFrame:
-        """Different clusters of nodes based on their labels, in-/outgoing degrees
-
-        :return: clusters_by_label_and_degree
-        :rtype: pd.DataFrame
-        """
-        return self.__clusters.clusters_by_label_and_degree
-
-    @property
-    def clusters_by_adjacency_list(self) -> pd.DataFrame:
-        """Different clusters of nodes based on their labels, in-/outgoing degrees and adjacency lists
-
-        :return: clusters_by_adjacency_list
-        :rtype: pd.DataFrame
-        """
-        return self.__clusters.clusters_by_adjacency_list
 
     @property
     def canonical_code(self) -> str:

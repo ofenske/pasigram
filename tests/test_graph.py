@@ -6,18 +6,6 @@ from pasigram.service.graph_service import build_csp_graph
 
 class TestGraph(TestCase):
 
-    def test_matrix(self):
-        expected = pd.DataFrame.from_dict({"1": [float('nan'), "1"],
-                                           "2": ["2", float('nan')]}, columns=["1", "2"], orient="index").to_string()
-        nodes = pd.DataFrame.from_dict({"1": ["node1"],
-                                        "2": ["node2"]}, orient='index', columns=['label'])
-        edges = pd.DataFrame.from_dict({"1": ["1", "2", "a"],
-                                        "2": ["2", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
-
-        graph = Graph(nodes, edges)
-        result = graph.adjacency_matrix.to_string()
-        self.assertEqual(expected, result, msg="Test for the matrix")
-
     def test_canonical_code(self):
         nodes1 = pd.read_csv(r'../data/nodes.csv', sep=';', index_col='id')
         nodes2 = pd.read_csv(r'../data/nodes2.csv', sep=';', index_col='id')
@@ -67,3 +55,19 @@ class TestGraph(TestCase):
         print(expected)
 
         self.assertEqual(expected, result, msg="Test for the adjacency list")
+
+
+""""def test_matrix(self):
+        expected = pd.DataFrame.from_dict({"1": [float('nan'), "1"],
+                                           "2": ["2", float('nan')]}, columns=["1", "2"], orient="index").to_string()
+        nodes = pd.DataFrame.from_dict({"1": ["node1"],
+                                        "2": ["node2"]}, orient='index', columns=['label'])
+        edges = pd.DataFrame.from_dict({"1": ["1", "2", "a"],
+                                        "2": ["2", "1", "b"]}, orient='index', columns=['source', 'target', 'label'])
+
+        graph = Graph(nodes, edges)
+        result = graph.adjacency_matrix.to_string()
+        self.assertEqual(expected, result, msg="Test for the matrix")"""
+
+
+
