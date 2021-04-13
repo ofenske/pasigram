@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from pasigram.model.graph import Graph
 from pasigram.controller.pasigram import Pasigram
 from timeit import default_timer as timer
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     graph.build_csp_graph()
 
     pasigram = Pasigram(graph, 2)
+    np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
     if local_cluster is True:
         sc = SparkContext(appName="PaSiGraM", master="local")
