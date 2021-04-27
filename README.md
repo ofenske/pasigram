@@ -18,3 +18,5 @@ Both versions (distributed and local) are organized by a modificated version of 
 are located in the model package. The method for every data structure can be found in the service package. And the the
 single parts (candidate generation and significance computation) and main method of PaSiGraM are part of the controller 
 package.
+
+For further information about the structure or functionality of PaSiGraM, please have a look at my blog post: https://ole-fenske.de/?p=898
